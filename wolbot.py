@@ -16,9 +16,10 @@ import requests
 import version
 import config
 import wol
+import sshcontrol
 
 # Compatible storage file version with this code
-STORAGE_FILE_VERSION = '2.0'
+STORAGE_FILE_VERSION = '3.0'
 
 logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -28,11 +29,12 @@ machines = []
 
 
 class Machine:
-    def __init__(self, mid, name, addr):
+    def __init__(self, mid, name, addr, host=None, user=None):
         self.id = mid
         self.name = name
         self.addr = addr
-
+        self.host = host
+        self.user = user
 
 ##
 # Command Handlers
@@ -120,6 +122,35 @@ def cmd_wake_mac(bot, update, **kwargs):
     # Parse arguments and send WoL packets
     mac_address = kwargs['args'][0]
     send_magic_packet(bot, update, mac_address, mac_address)
+
+def cmd_shutdown(bot, update, **kwargs):
+    log_call(update)
+    # Check correctness of call
+    if not authorize(bot, update):
+        return
+
+    # When no args are supplied
+    if 'args' not in kwargs or len(kwargs['args']) < 1 and len(machines) != 1:
+        if not len(machines):
+            update.message.reply_text('Please add a machine with the /add command first!')
+        markup = InlineKeyboardMarkup(generate_machine_keyboard(machines))
+        update.message.reply_text('Please select a machine to wake:', reply_markup=markup)
+        return
+
+    # Parse arguments and send WoL packets
+    if len(machines) == 1:
+        machine_name = machines[0].name
+    else:
+        machine_name = kwargs['args'][0]
+    for m in machines:
+        if m.name == machine_name:
+            if is_not_blank(m.host) and is_not_blank(m.user):
+                send_shutdown_command(bot, update, m.host, m.user, m.name)
+            else:
+                update.message.reply_text(machine_name + ' is not set up for the shutdown command')
+            return
+    update.message.reply_text('Could not find ' + machine_name)
+
 
 
 def cmd_list(bot, update):
@@ -255,6 +286,19 @@ def send_magic_packet(bot, update, mac_address, display_name):
     else:
         update.message.reply_text(poke)
 
+def send_shutdown_command(bot, update, hostname, user, display_name):
+    try:
+        sshcontrol.shutdown(hostname, user)
+    except ValueError as e:
+        update.message.reply_text(str(e))
+        return
+    poke = 'Sending shutdown command...\n {name}'.format(
+            name=display_name)
+
+    if update.callback_query:
+        update.callback_query.edit_message_text(poke)
+    else:
+        update.message.reply_text(poke)
 
 def generate_machine_keyboard(machines):
     kbd = []
@@ -304,16 +348,21 @@ def get_highest_id():
             highest = m.id
     return highest
 
+def is_not_blank(string):
+    return bool(string and string.strip())
 
 def write_savefile(path):
     logger.info('Writing stored machines to "{p}"'.format(p=path))
     csv=''
     # Add meta settings
     csv += '$VERSION={v}\n'.format(v=STORAGE_FILE_VERSION)
-
+    
     # Add data
     for m in machines:
-        csv += '{i};{n};{a}\n'.format(i=m.id, n=m.name, a=m.addr)
+        if is_not_blank(m.host) and is_not_blank(m.user):
+            csv += '{i};{n};{a};{h};{u}\n'.format(i=m.id, n=m.name, a=m.addr, h=m.host, u=m.user)
+        else:
+            csv += '{i};{n};{a};;\n'.format(i=m.id, n=m.name, a=m.addr)
 
     with open(path, 'w') as f:
         f.write(csv)
@@ -332,8 +381,8 @@ def read_savefile(path):
                 if not value.strip() == STORAGE_FILE_VERSION:
                     raise ValueError('Incompatible storage file version')
             else:
-                mid, name, addr = line.split(';', 2)
-                machines.append(Machine(int(mid), name, addr.strip()))
+                mid, name, addr, host, user = line.split(';', 4)
+                machines.append(Machine(int(mid), name, addr, host, user.strip()))
 
 
 def main():
@@ -353,6 +402,7 @@ def main():
     disp.add_handler(CommandHandler('wakemac', cmd_wake_mac, pass_args=True))
     disp.add_handler(CommandHandler('add',     cmd_add,      pass_args=True))
     disp.add_handler(CommandHandler('remove',  cmd_remove,   pass_args=True))
+    disp.add_handler(CommandHandler('shutdown',    cmd_shutdown,     pass_args=True))
 
     disp.add_error_handler(error)
 
