@@ -2,4 +2,6 @@ config.py
 mac-addresses.csv
 
 __pycache__
+wolbot_env
 
+*.kate-swp
