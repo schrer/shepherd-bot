@@ -17,23 +17,25 @@ import version
 import config
 import wol
 import sshcontrol
+from paramiko.ssh_exception import (SSHException)
 
 # Compatible storage file version with this code
 STORAGE_FILE_VERSION = '3.0'
 
 logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO)
+        format=config.LOG_FORMAT,
+        level=config.LOG_LEVEL)
 logger = logging.getLogger(__name__)
 machines = []
 
 
 class Machine:
-    def __init__(self, mid, name, addr, host=None, user=None):
+    def __init__(self, mid, name, addr, host=None, port=22, user=None):
         self.id = mid
         self.name = name
         self.addr = addr
         self.host = host
+        self.port = port
         self.user = user
 
 ##
@@ -54,6 +56,9 @@ def cmd_help(bot, update):
 
 /wakemac <mac>
     Wake machine with mac address
+
+/shutdown [name]
+    Shutdown saved machine with name
 
 /list
     List all saved machines
@@ -144,10 +149,11 @@ def cmd_shutdown(bot, update, **kwargs):
         machine_name = kwargs['args'][0]
     for m in machines:
         if m.name == machine_name:
-            if is_not_blank(m.host) and is_not_blank(m.user):
-                send_shutdown_command(bot, update, m.host, m.user, m.name)
+            logger.info('host: ' + str(m.host) + '; user: ' + str(m.user) + ' ; port:' + str(m.port))
+            if is_not_blank(m.host) and is_not_blank(m.user) and not m.port==None:
+                send_shutdown_command(bot, update, m.host, m.port, m.user, m.name)
             else:
-                update.message.reply_text(machine_name + ' is not set up for the shutdown command')
+                update.message.reply_text(machine_name + ' is not set up for SSH connection')
             return
     update.message.reply_text('Could not find ' + machine_name)
 
@@ -286,14 +292,18 @@ def send_magic_packet(bot, update, mac_address, display_name):
     else:
         update.message.reply_text(poke)
 
-def send_shutdown_command(bot, update, hostname, user, display_name):
+def send_shutdown_command(bot, update, hostname, port, user, display_name):
     try:
-        sshcontrol.shutdown(hostname, user)
+        cmdOutput = sshcontrol.shutdown(hostname, port, user)
     except ValueError as e:
         update.message.reply_text(str(e))
         return
-    poke = 'Sending shutdown command...\n {name}'.format(
-            name=display_name)
+    except SSHException as e:
+        update.message.reply_text('An error occurred while trying to send the shutdown command over SSH')
+        return 
+    
+    poke = 'Shutdown command sent to {name}. Output:\n{output}'.format(
+            name=display_name, output=cmdOutput)
 
     if update.callback_query:
         update.callback_query.edit_message_text(poke)
@@ -359,10 +369,10 @@ def write_savefile(path):
     
     # Add data
     for m in machines:
-        if is_not_blank(m.host) and is_not_blank(m.user):
-            csv += '{i};{n};{a};{h};{u}\n'.format(i=m.id, n=m.name, a=m.addr, h=m.host, u=m.user)
+        if is_not_blank(m.host) and is_not_blank(m.user) and not m.port==None:
+            csv += '{i};{n};{a};{h};{p};{u}\n'.format(i=m.id, n=m.name, a=m.addr, h=m.host, p=m.port, u=m.user)
         else:
-            csv += '{i};{n};{a};;\n'.format(i=m.id, n=m.name, a=m.addr)
+            csv += '{i};{n};{a};;;\n'.format(i=m.id, n=m.name, a=m.addr)
 
     with open(path, 'w') as f:
         f.write(csv)
@@ -381,8 +391,8 @@ def read_savefile(path):
                 if not value.strip() == STORAGE_FILE_VERSION:
                     raise ValueError('Incompatible storage file version')
             else:
-                mid, name, addr, host, user = line.split(';', 4)
-                machines.append(Machine(int(mid), name, addr, host, user.strip()))
+                mid, name, addr, host, port, user = line.split(';', 5)
+                machines.append(Machine(int(mid), name, addr, host, port, user.strip()))
 
 
 def main():
