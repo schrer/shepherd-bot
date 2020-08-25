@@ -1,3 +1,4 @@
+import logging
 
 # Telegram Web API Token
 TOKEN='123456789:abcxdefghijklmnopqrs-tuvwxyzabcdefg'
@@ -6,7 +7,7 @@ TOKEN='123456789:abcxdefghijklmnopqrs-tuvwxyzabcdefg'
 ALLOWED_USERS=['123456789', '123123123']
 
 # Location to store the saved machines
-STORAGE_PATH='/opt/wolbot/mac-addresses.csv'
+STORAGE_PATH='/opt/wolbot/machines.csv'
 
 # Separator to use when printing addresses
 MAC_ADDR_SEPARATOR='-'
@@ -17,3 +18,8 @@ IP_WEBSERVICE='https://ipv4.icanhazip.com/'
 # The Regex used to find the IP in the webservice response
 IP_REGEX='([0-9]{1,3}\.){3}[0-9]{1,3}'
 
+# Logger format for whole application
+LOG_FORMAT='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+# General log level to use in the application
+LOG_LEVEL=logging.INFO

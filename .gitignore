@@ -1,5 +1,10 @@
 config.py
 mac-addresses.csv
+machines.csv
 
 __pycache__
+wolbot_env
 
+*.kate-swp
+*.kdev4
+kdev4
