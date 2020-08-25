@@ -299,7 +299,7 @@ def send_shutdown_command(bot, update, hostname, port, user, display_name):
         update.message.reply_text(str(e))
         return
     except SSHException as e:
-        update.message.reply_text('An error occurred while trying to send the shutdown command over SSH')
+        update.message.reply_text('An error occurred while trying to send the shutdown command over SSH.\n{e}\n'.format(e=str(e)))
         return 
     
     poke = 'Shutdown command sent to {name}. Output:\n{output}'.format(
@@ -397,6 +397,8 @@ def read_savefile(path):
 
 def main():
     logger.info('Starting bot version {v}'.format(v=version.V))
+    if not config.VERIFY_HOST_KEYS:
+        logger.warning('Verification of host keys for SSH connections is deactivated.')
     read_savefile(config.STORAGE_PATH)
 
     # Set up updater

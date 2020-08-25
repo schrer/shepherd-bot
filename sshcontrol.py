@@ -34,7 +34,7 @@ def run_remote_command(hostname, port, username, command):
     """
     log_command_execution(hostname, port, username, command)
     try:
-        client: SSHClient = connect_SSHClient(hostname, port, username)
+        client = connect_SSHClient(hostname, port, username)
     except SSHException:
         logger.warning('Caught SSHException during SSHClient setup.')
         raise
@@ -74,8 +74,11 @@ def connect_SSHClient(hostname, port, username):
     :param int port: the SSH port of the server
     :param str username: the username for login
     """
-    client: SSHClient = paramiko.SSHClient()
-    client.load_system_host_keys()
+    client = paramiko.SSHClient()
+    if config.VERIFY_HOST_KEYS:
+        client.load_system_host_keys()
+    else:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(hostname, username=username, port=port, timeout=DEFAULT_TIMEOUT)
     return client
 
