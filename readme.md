@@ -1,6 +1,6 @@
-# WOLBOT
+# Shepherd
 
-Simple Wake-on-Lan Telegram bot
+Wake-on-Lan and SSH Telegram bot
 
 ![chat example](images/chat.jpg)
 
@@ -9,9 +9,14 @@ Simple Wake-on-Lan Telegram bot
 > See `/help` for a list of available commands
 
 ## Requirements
+
+### Bot host
 - python 3
-- python-telegram-bot
-- Virtualenv (recommended)
+- Virtualenv
+
+### Target machines
+- SSH server (only for SSH commands)
+- WOL support (for `/start` command)
 
 ## Installation
 
@@ -35,6 +40,7 @@ $ virtualenv wolbot_venv
 $ source wolbot_venv/bin/activate
 (venv)$ pip install -r requirements.txt
 ```
+If any errors occur during the reuirements installation, you are possibly missing some build dependencies. Check from the errors what could be missing and install that with `apt`.
 
 Start the application
 ```
@@ -48,11 +54,11 @@ The easiest way is to add the launcher script to `/etc/rc.local`.
 /opt/wolbot/wolbot-launcher.sh
 ```
 
-For all commands that run over SSH, it will also be necessary to do some more setup on the Raspberry Pi.
-In order to be able to login when running wolbot from `/etc/rc.local`, there has to root user has to have an auth-key available, that is listed as authorized_key on the SSH server (a.k.a. the machine you want to command). This can be done by adding such a key into the directory `/root/.ssh`.
+For all commands that run over SSH, it will also be necessary to do some more setup on the Raspberry Pi and the target machine.
+In order to be able to login when running wolbot from `/etc/rc.local`, the root user has to have an auth-key available, that is listed as authorized_key on the SSH server (a.k.a. the machine you want to command). This can be done by adding such a key into the directory `/root/.ssh` on the Raspberry Pi.
 
 ### Shutdown command
 
 Besides the setup for an SSH connection over Python, the machine that should be shut down also needs to be prepared.
 When running the command `sudo shutdown`, sudo should be configured to not ask for a password with the executing user.
-This can be done by running `sudo visudo`. This will open a file, add the following into a new line: `<your_username> ALL=(ALL) NOPASSWD: /sbin/shutdown`
+This can be done by running `sudo visudo`. This will open a file, add the following into a new line: `<your_username> ALL=(ALL) NOPASSWD: /sbin/shutdown`, where <your_username> is the username you use as SSH login-detail stored for the Telegram bot.
