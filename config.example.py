@@ -24,5 +24,5 @@ LOG_FORMAT='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 # General log level to use in the application
 LOG_LEVEL=logging.INFO
 
-# Turn verification of host keys of or on. Not advisible, only turn of in private networks, if ever
+# Turn verification of host keys off or on. Not advisible, only turn off in private networks and for testing purposes, if ever
 VERIFY_HOST_KEYS=True
