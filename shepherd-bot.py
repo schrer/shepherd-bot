@@ -45,7 +45,7 @@ class Machine:
 def cmd_help(bot, update):
     log_call(update)
     help_message = """
-(*≧▽≦) WOLBOT v{v} (≧▽≦*)
+Shepherd v{v}
 
 /help
     Display this help
@@ -70,7 +70,7 @@ def cmd_help(bot, update):
     Remove a machine
 
 /ip
-    Get the public IP address of the network Wolbot is in
+    Get the public IP address of the network Shepherd is in
 
 Names may only contain a-z, 0-9 and _
 Mac addresses can use any or no separator
@@ -329,7 +329,7 @@ def authorize(bot, update):
                 ln=update.message.from_user.last_name,
                 i=update.message.from_user.id))
         update.message.reply_text('You are not authorized to use this bot.\n'
-                + 'To set up your own visit https://github.com/os-sc/wolbot')
+                + 'To set up your own visit https://github.com/schrer/shepherd-bot')
         return False
     return True
 

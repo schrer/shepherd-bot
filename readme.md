@@ -22,10 +22,10 @@ Wake-on-Lan and SSH Telegram bot
 
 Clone the repository
 ```
-# mkdir -p /opt/wolbot
-# chown -R user:group /opt/wolbot
-$ git clone url /opt/wolbot
-$ cd /opt/wolbot
+# mkdir -p /opt/shepherd-bot
+# chown -R user:group /opt/shepherd-bot
+$ git clone url /opt/shepherd-bot
+$ cd /opt/shepherd-bot
 ```
 
 Edit the config with your favorite editor (aka `vim`)
@@ -36,26 +36,26 @@ $ vim config.py
 
 Set up the Python environment
 ```
-$ virtualenv wolbot_venv
-$ source wolbot_venv/bin/activate
+$ virtualenv shepherd_venv
+$ source shepherd_venv/bin/activate
 (venv)$ pip install -r requirements.txt
 ```
 If any errors occur during the reuirements installation, you are possibly missing some build dependencies. Check from the errors what could be missing and install that with `apt`.
 
 Start the application
 ```
-(venv)$ python3 wolbot.py
+(venv)$ python3 shepherd-bot.py
 ```
 
 ### Autostart on Raspberry Pi
 
 The easiest way is to add the launcher script to `/etc/rc.local`.
 ```
-/opt/wolbot/wolbot-launcher.sh
+/opt/shepherd-bot/shepherd-launcher.sh
 ```
 
 For all commands that run over SSH, it will also be necessary to do some more setup on the Raspberry Pi and the target machine.
-In order to be able to login when running wolbot from `/etc/rc.local`, the root user has to have an auth-key available, that is listed as authorized_key on the SSH server (a.k.a. the machine you want to command). This can be done by adding such a key into the directory `/root/.ssh` on the Raspberry Pi.
+In order to be able to login when running Shepherd from `/etc/rc.local`, the root user has to have an auth-key available, that is listed as authorized_key on the SSH server (a.k.a. the machine you want to command). This can be done by adding such a key into the directory `/root/.ssh` on the Raspberry Pi.
 
 ### Shutdown command
 
