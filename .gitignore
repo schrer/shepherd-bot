@@ -1,10 +1,19 @@
+# Configuration files
 config.py
 mac-addresses.csv
 machines.csv
 
+# Python environment files
 __pycache__
 wolbot_env
+shepherd_env
 
+# Project/Editor files
+## KDevelop4
 *.kate-swp
 *.kdev4
 kdev4
+
+## PyCharm
+.idea
+*.iml
