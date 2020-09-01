@@ -62,3 +62,7 @@ In order to be able to login when running Shepherd from `/etc/rc.local`, the roo
 Besides the setup for an SSH connection over Python, the machine that should be shut down also needs to be prepared.
 When running the command `sudo shutdown`, sudo should be configured to not ask for a password with the executing user.
 This can be done by running `sudo visudo`. This will open a file, add the following into a new line: `<your_username> ALL=(ALL) NOPASSWD: /sbin/shutdown`, where <your_username> is the username you use as SSH login-detail stored for the Telegram bot.
+
+## Acknowledgements
+
+The base for this repository was [wolbot by Osir](https://github.com/osir/wolbot). Backwards compatibility is not kept, but the version numbering is, so the first official version of Shepherd is 3.0
