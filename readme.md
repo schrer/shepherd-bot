@@ -41,6 +41,7 @@ $ source shepherd_venv/bin/activate
 (venv)$ pip install -r requirements.txt
 ```
 If any errors occur during the reuirements installation, you are possibly missing some build dependencies. Check from the errors what could be missing and install that with `apt`.
+One that was missing for me was libffi-dev as dependency for cffi, which in turn is a transitive dependency of Shepherd via Paramiko (for SSH connections).
 
 Start the application
 ```
