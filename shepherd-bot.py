@@ -284,7 +284,7 @@ def send_magic_packet(bot, update, mac_address, display_name):
     except ValueError as e:
         update.message.reply_text(str(e))
         return
-    poke = 'Sending magic packets...\n 彡ﾟ◉ω◉ )つー☆ﾟ. {name}'.format(
+    poke = 'Sending magic packets...\n{name}'.format(
             name=display_name)
 
     if update.callback_query:
