@@ -1,5 +1,13 @@
 # Changelog
 
+## Shepherd 3.0
+
+- First version of Shepherd after fork from Wolbot
+- All mentions of wolbot changed to Shepherd
+- Added `/shutdown` command (running over SSH)
+- Add fields hostname, port and username to machines file (for SSH connections)
+- Added MIT License
+
 ## 2.2
 
 - Added the `/ip` command
