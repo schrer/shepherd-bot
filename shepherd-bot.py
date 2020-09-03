@@ -42,7 +42,7 @@ class Machine:
 # Command Handlers
 ##
 
-def cmd_help(bot, update):
+def cmd_help(update, context):
     log_call(update)
     help_message = """
 Shepherd v{v}
@@ -78,33 +78,38 @@ Mac addresses can use any or no separator
     update.message.reply_text(help_message)
 
 
-def cmd_wake(bot, update, **kwargs):
+def cmd_wake(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(bot, update):
+    if not authorize(update):
         return
 
     # When no args are supplied
-    if 'args' not in kwargs or len(kwargs['args']) < 1 and len(machines) != 1:
+    args = context.args
+    if len(args) < 1 and len(machines) != 1:
         if not len(machines):
             update.message.reply_text('Please add a machine with the /add command first!')
         markup = InlineKeyboardMarkup(generate_machine_keyboard(machines))
         update.message.reply_text('Please select a machine to wake:', reply_markup=markup)
         return
 
+    if len(args) > 1:
+        update.message.reply_text('Please supply only a machine name')
+        return
+
     # Parse arguments and send WoL packets
-    if len(machines) == 1:
+    if len(args) == 0:
         machine_name = machines[0].name
     else:
-        machine_name = kwargs['args'][0]
+        machine_name = args[0]
     for m in machines:
         if m.name == machine_name:
-            send_magic_packet(bot, update, m.addr, m.name)
+            send_magic_packet(update, m.addr, m.name)
             return
     update.message.reply_text('Could not find ' + machine_name)
 
 
-def cmd_wake_keyboard_handler(bot, update):
+def cmd_wake_keyboard_handler(update, context):
     try:
         n = int(update.callback_query.data)
     except ValueError:
@@ -112,30 +117,32 @@ def cmd_wake_keyboard_handler(bot, update):
     matches = [m for m in machines if m.id == n]
     if len(matches) < 1:
         return
-    send_magic_packet(bot, update, matches[0].addr, matches[0].name)
+    send_magic_packet(update, matches[0].addr, matches[0].name)
 
 
-def cmd_wake_mac(bot, update, **kwargs):
+def cmd_wake_mac(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(bot, update):
+    if not authorize(update):
         return
-    if 'args' not in kwargs or len(kwargs['args']) < 1:
+    args = context.args
+    if len(args) < 1:
         update.message.reply_text('Please supply a mac address')
         return
 
     # Parse arguments and send WoL packets
-    mac_address = kwargs['args'][0]
-    send_magic_packet(bot, update, mac_address, mac_address)
+    mac_address = args[0]
+    send_magic_packet(update, mac_address, mac_address)
 
-def cmd_shutdown(bot, update, **kwargs):
+def cmd_shutdown(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(bot, update):
+    if not authorize(update):
         return
 
+    args = context.args
     # When no args are supplied
-    if 'args' not in kwargs or len(kwargs['args']) < 1 and len(machines) != 1:
+    if len(args) < 1 and len(machines) != 1:
         if not len(machines):
             update.message.reply_text('Please add a machine with the /add command first!')
         markup = InlineKeyboardMarkup(generate_machine_keyboard(machines))
@@ -143,15 +150,15 @@ def cmd_shutdown(bot, update, **kwargs):
         return
 
     # Parse arguments and send WoL packets
-    if len(machines) == 1:
+    if len(args) == 1:
         machine_name = machines[0].name
     else:
-        machine_name = kwargs['args'][0]
+        machine_name = args[0]
     for m in machines:
         if m.name == machine_name:
             logger.info('host: ' + str(m.host) + '; user: ' + str(m.user) + ' ; port:' + str(m.port))
             if is_not_blank(m.host) and is_not_blank(m.user) and not m.port==None:
-                send_shutdown_command(bot, update, m.host, m.port, m.user, m.name)
+                send_shutdown_command(update, m.host, m.port, m.user, m.name)
             else:
                 update.message.reply_text(machine_name + ' is not set up for SSH connection')
             return
@@ -159,10 +166,10 @@ def cmd_shutdown(bot, update, **kwargs):
 
 
 
-def cmd_list(bot, update):
+def cmd_list(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(bot, update):
+    if not authorize(update):
         return
 
     # Print all stored machines
@@ -172,18 +179,19 @@ def cmd_list(bot, update):
     update.message.reply_text(msg)
 
 
-def cmd_add(bot, update, **kwargs):
+def cmd_add(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(bot, update):
+    if not authorize(update):
         return
-    if 'args' not in kwargs or len(kwargs['args']) < 2:
+    args = context.args
+    if len(args) != 2:
         update.message.reply_text('Please supply a name and mac address')
         return
 
     # Parse arguments
-    machine_name = kwargs['args'][0]
-    addr = kwargs['args'][1]
+    machine_name = args[0]
+    addr = args[1]
 
     # Validate and normalize arguments
     if any(m.name == machine_name for m in machines):
@@ -211,17 +219,18 @@ def cmd_add(bot, update, **kwargs):
         update.message.reply_text('Could not write changes to disk')
 
 
-def cmd_remove(bot, update, **kwargs):
+def cmd_remove(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(bot, update):
+    if not authorize(update):
         return
-    if 'args' not in kwargs or len(kwargs['args']) < 1:
+    args = context.args
+    if len(args) < 1:
         update.message.reply_text('Please supply a name')
         return
 
     # Parse arguments and look for machine to be deleted
-    machine_name = kwargs['args'][0]
+    machine_name = args[0]
     if not any(m.name == machine_name for m in machines):
         update.message.reply_text('Could not find ' + machine_name)
         return
@@ -239,10 +248,10 @@ def cmd_remove(bot, update, **kwargs):
         update.message.reply_text('Could not write changes to disk')
 
 
-def cmd_ip(bot, update):
+def cmd_ip(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(bot, update):
+    if not authorize(update):
         return
 
     try:
@@ -263,8 +272,8 @@ def cmd_ip(bot, update):
 # Other Functions
 ##
 
-def error(bot, update, error):
-    logger.warning('Update "{u}" caused error "{e}"'.format(u=update, e=error))
+def error(update, context):
+    logger.warning('Update "{u}" caused error "{e}"'.format(u=update, e=context.error))
 
 
 def log_call(update):
@@ -278,7 +287,7 @@ def log_call(update):
                 .format(c=cmd[0], u=uid))
 
 
-def send_magic_packet(bot, update, mac_address, display_name):
+def send_magic_packet(update, mac_address, display_name):
     try:
         wol.wake(mac_address)
     except ValueError as e:
@@ -292,7 +301,7 @@ def send_magic_packet(bot, update, mac_address, display_name):
     else:
         update.message.reply_text(poke)
 
-def send_shutdown_command(bot, update, hostname, port, user, display_name):
+def send_shutdown_command(update, hostname, port, user, display_name):
     try:
         cmdOutput = sshcontrol.shutdown(hostname, port, user)
     except ValueError as e:
@@ -322,7 +331,7 @@ def user_is_allowed(uid):
     return str(uid) in config.ALLOWED_USERS
 
 
-def authorize(bot, update):
+def authorize(update):
     if not user_is_allowed(update.message.from_user.id):
         logger.warning('Unknown User {fn} {ln} [{i}] tried to call bot'.format(
                 fn=update.message.from_user.first_name,
@@ -396,13 +405,13 @@ def read_savefile(path):
 
 
 def main():
-    logger.info('Starting bot version {v}'.format(v=version.V))
+    logger.info('Starting Shepherd bot version {v}'.format(v=version.V))
     if not config.VERIFY_HOST_KEYS:
         logger.warning('Verification of host keys for SSH connections is deactivated.')
     read_savefile(config.STORAGE_PATH)
 
     # Set up updater
-    updater = Updater(config.TOKEN)
+    updater = Updater(config.TOKEN, use_context=True)
     disp = updater.dispatcher
 
     # Add handlers
