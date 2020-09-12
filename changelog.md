@@ -1,5 +1,11 @@
 # Changelog
 
+## Shepherd 3.0.1
+
+- Change versioning to "semantic versioning" with 3 Elements to a version number (MAJOR.MINOR.PATCH)
+- Update logging for shutdown command
+- Bugfix: fix check for number of arguments on shutdown command
+
 ## Shepherd 3.0
 
 - First version of Shepherd after fork from Wolbot

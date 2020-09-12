@@ -149,17 +149,18 @@ def cmd_shutdown(update, context):
         update.message.reply_text('Please select a machine to wake:', reply_markup=markup)
         return
 
-    # Parse arguments and send WoL packets
-    if len(args) == 1:
+    # Parse arguments and send shutdown command
+    if len(args) == 0:
         machine_name = machines[0].name
     else:
         machine_name = args[0]
     for m in machines:
         if m.name == machine_name:
-            logger.info('host: ' + str(m.host) + '; user: ' + str(m.user) + ' ; port:' + str(m.port))
             if is_not_blank(m.host) and is_not_blank(m.user) and not m.port==None:
+                logger.info('host: {host}| user: {user}| port: {port}'.format(host=m.host, user=m.user, port=m.port))
                 send_shutdown_command(update, m.host, m.port, m.user, m.name)
             else:
+                logger.info('Machine {name} not set up for SSH connections.'.format(name=m.name))
                 update.message.reply_text(machine_name + ' is not set up for SSH connection')
             return
     update.message.reply_text('Could not find ' + machine_name)
