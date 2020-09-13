@@ -2,6 +2,7 @@
 config.py
 mac-addresses.csv
 machines.csv
+commands.csv
 
 # Python environment files
 __pycache__

@@ -32,9 +32,9 @@ def run_remote_command(hostname, port, username, command):
     
     :raises SSHException
     """
-    log_command_execution(hostname, port, username, command)
+    __log_command_execution(hostname, port, username, command)
     try:
-        client = connect_SSHClient(hostname, port, username)
+        client = __connect_SSHClient(hostname, port, username)
     except SSHException:
         logger.warning('Caught SSHException during SSHClient setup.')
         raise
@@ -61,11 +61,11 @@ def run_remote_command(hostname, port, username, command):
     for line in stderr:
         output += line
 
-    close_SSHClient(client)
+    __close_SSHClient(client)
     return output
-    
-        
-def connect_SSHClient(hostname, port, username):
+
+
+def __connect_SSHClient(hostname, port, username):
     """
     Opens an SSH connection to the specified host. For authentication, any key from an SSH Agent or id_(rsa|ecds|dsa) in ~/.ssh is
     automatically detected by Paramiko and tried for authentication.
@@ -82,8 +82,8 @@ def connect_SSHClient(hostname, port, username):
     client.connect(hostname, username=username, port=port, timeout=DEFAULT_TIMEOUT)
     return client
 
-def close_SSHClient(client):
+def __close_SSHClient(client):
     client.close()
-    
-def log_command_execution(hostname, port, username, command):
+
+def __log_command_execution(hostname, port, username, command):
     logger.info('Trying to run command. Host: ' + hostname + ' | Port: ' + str(port) + ' | User: ' + username + ' | Command: ' + command)
