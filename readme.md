@@ -15,7 +15,7 @@ Wake-on-Lan and SSH Telegram bot
 - Virtualenv
 
 ### Target machines
-- SSH server (only for SSH commands)
+- SSH server (only for SSH commands like `/shutdown` and `/command`)
 - WOL support (for `/start` command)
 
 ## Installation
@@ -28,10 +28,21 @@ $ git clone url /opt/shepherd-bot
 $ cd /opt/shepherd-bot
 ```
 
-Edit the config with your favorite editor (aka `vim`)
+Edit the config with your favorite editor (aka `nano`)
 ```
 $ cp config.example.py config.py
-$ vim config.py
+$ nano config.py
+```
+
+Set up commands for the `/command` keyword.
+```
+$ cp commands.example.csv commands.csv
+$ nano commands.csv
+```
+
+The colums in the CSV are the following (also see commands.example.csv for example lines):
+```
+id;name;type;command;description
 ```
 
 Set up the Python environment

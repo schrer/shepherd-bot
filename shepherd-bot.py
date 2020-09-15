@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os.path
 import logging
 import re
 
@@ -13,30 +12,25 @@ from telegram.ext import (Updater,
         Filters,
         CallbackQueryHandler)
 import requests
+from paramiko.ssh_exception import (SSHException)
+
 import version
 import config
 import wol
 import sshcontrol
-from paramiko.ssh_exception import (SSHException)
-
-# Compatible storage file version with this code
-STORAGE_FILE_VERSION = '3.0'
+import storage
+from storage import (Machine, 
+                     write_machines_file, read_machines_file,
+                     read_commands_file)
+from utils import (is_not_blank, normalize_mac_address, get_highest_id, is_valid_name, find_by_name, check_ssh_setup)
+from commands import (Command, SSHCommand, execute_command)
 
 logging.basicConfig(
         format=config.LOG_FORMAT,
         level=config.LOG_LEVEL)
 logger = logging.getLogger(__name__)
 machines = []
-
-
-class Machine:
-    def __init__(self, mid, name, addr, host=None, port=22, user=None):
-        self.id = mid
-        self.name = name
-        self.addr = addr
-        self.host = host
-        self.port = port
-        self.user = user
+commands = []
 
 ##
 # Command Handlers
@@ -59,6 +53,9 @@ Shepherd v{v}
 
 /shutdown [name]
     Shutdown saved machine with name
+    
+/command [name] <command>
+    Run command on machine via SSH. If neither machine name nor command are specified, a list of supported commands is sent.
 
 /list
     List all saved machines
@@ -154,16 +151,20 @@ def cmd_shutdown(update, context):
         machine_name = machines[0].name
     else:
         machine_name = args[0]
-    for m in machines:
-        if m.name == machine_name:
-            if is_not_blank(m.host) and is_not_blank(m.user) and not m.port==None:
-                logger.info('host: {host}| user: {user}| port: {port}'.format(host=m.host, user=m.user, port=m.port))
-                send_shutdown_command(update, m.host, m.port, m.user, m.name)
-            else:
-                logger.info('Machine {name} not set up for SSH connections.'.format(name=m.name))
-                update.message.reply_text(machine_name + ' is not set up for SSH connection')
-            return
-    update.message.reply_text('Could not find ' + machine_name)
+        
+    machine = find_by_name(machines, machine_name)
+    
+    if machine is None:
+        update.message.reply_text('Could not find ' + machine_name)
+        return
+    
+    if check_ssh_setup(machine):
+        logger.info('host: {host}| user: {user}| port: {port}'.format(host=machine.host, user=machine.user, port=machine.port))
+        send_shutdown_command(update, machine.host, machine.port, machine.user, machine.name)
+    else:
+        logger.info('Machine {name} not set up for SSH connections.'.format(name=machine.name))
+        update.message.reply_text(machine.name + ' is not set up for SSH connection')
+    return
 
 
 
@@ -210,12 +211,12 @@ def cmd_add(update, context):
         return
 
     # Add machine to list
-    machines.append(Machine(get_highest_id()+1, machine_name, addr))
+    machines.append(Machine(get_highest_id(machines)+1, machine_name, addr))
     update.message.reply_text('Added new machine')
 
     # Save list
     try:
-        write_savefile(config.STORAGE_PATH)
+        write_machines_file(config.MACHINES_STORAGE_PATH, machines)
     except:
         update.message.reply_text('Could not write changes to disk')
 
@@ -244,7 +245,7 @@ def cmd_remove(update, context):
 
     # Save list
     try:
-        write_savefile(config.STORAGE_PATH)
+        write_machines_file(config.MACHINES_STORAGE_PATH, machines)
     except:
         update.message.reply_text('Could not write changes to disk')
 
@@ -268,7 +269,66 @@ def cmd_ip(update, context):
     except RuntimeError as e:
         update.message.reply_text('Error: ' + str(e))
 
+def cmd_command(update, context):
+    log_call(update)
+    
+    if not authorize(update):
+        return
+    
+    if len(machines) == 0:
+        update.message.reply_text('No machines are registered. Use the /add command or edit the bot configuration directly.')
+        return
+        
+    args = context.args
+    if len(args) == 0:
+        list_commands(update)
+        return
+    
+    if len(args) > 2:
+        update.message.reply_text('Only one command can be processed at a time.')
+        return
+    
+    if len(args) == 1:
+        machine_name = machines[0].name
+        command_name = args[0]
+    else:
+        machine_name = args[0]
+        command_name = args[1]
+    
+    command = find_by_name(commands, command_name)
+    machine = find_by_name(machines, machine_name)
+    
+    if command is None:
+        update.message.reply_text('Could not find command {cmd}.'.format(cmd=command_name))
+        return
+    
+    if machine is None:
+        update.message.reply_text('Could not find machine {machine}.'.format(machine=machine_name))
+        return
+    
+    if not check_ssh_setup(machine):
+        update.message.reply_text('Machine {machine} is not set up for SSH connections.'.format(machine=machine_name))
+        return
+        
+    try:
+        logger.info('Attempting to run command on machine {m}: {c}'.format(m=machine.name, c=command.name))
+        msg = execute_command(command, machine)
+        update.message.reply_text('Command executed:\n{m}'.format(m=msg))
+    except SSHException as e:
+        update.message.reply_text('Error in SSH messaging: {e}'.format(e=str(e)))
+        return
+    except RuntimeError as e:
+        update.message.reply_text('An unexpected error occurred: {e}'.format(e=str(e)))
+        return
 
+def list_commands(update):
+    msg = '{num} Stored Commands:\n'.format(num=len(commands))
+    for c in commands:
+        msg += '{name}: {description}\n'.format(name=c.name, description=c.description)
+    
+    msg += '\nRun a command with /command [machine_name] <cmd_name>'
+
+    update.message.reply_text(msg)
 ##
 # Other Functions
 ##
@@ -338,78 +398,21 @@ def authorize(update):
                 fn=update.message.from_user.first_name,
                 ln=update.message.from_user.last_name,
                 i=update.message.from_user.id))
+        # TODO: reply with GIF of Post Malone waving with finger in police outfit
         update.message.reply_text('You are not authorized to use this bot.\n'
                 + 'To set up your own visit https://github.com/schrer/shepherd-bot')
         return False
     return True
 
 
-def is_valid_name(name):
-    pattern = '[^_a-z0-9]'
-    return not re.search(pattern, name)
-
-
-def normalize_mac_address(addr):
-    if len(addr) == 12:
-        pass
-        return config.MAC_ADDR_SEPARATOR.join(
-                addr[i:i+2] for i in range(0,12,2))
-    elif len(addr) == 12 + 5:
-        sep = addr[2]
-        return addr.replace(sep, config.MAC_ADDR_SEPARATOR)
-    else:
-        raise ValueError('Incorrect MAC address format')
-
-
-def get_highest_id():
-    highest = -1
-    for m in machines:
-        if m.id > highest:
-            highest = m.id
-    return highest
-
-def is_not_blank(string):
-    return bool(string and string.strip())
-
-def write_savefile(path):
-    logger.info('Writing stored machines to "{p}"'.format(p=path))
-    csv=''
-    # Add meta settings
-    csv += '$VERSION={v}\n'.format(v=STORAGE_FILE_VERSION)
-    
-    # Add data
-    for m in machines:
-        if is_not_blank(m.host) and is_not_blank(m.user) and not m.port==None:
-            csv += '{i};{n};{a};{h};{p};{u}\n'.format(i=m.id, n=m.name, a=m.addr, h=m.host, p=m.port, u=m.user)
-        else:
-            csv += '{i};{n};{a};;;\n'.format(i=m.id, n=m.name, a=m.addr)
-
-    with open(path, 'w') as f:
-        f.write(csv)
-
-
-def read_savefile(path):
-    logger.info('Reading stored machines from "{p}"'.format(p=path))
-    # Warning: file contents will not be validated
-    if not os.path.isfile(path):
-        return
-    with open(path, 'r') as f:
-        for i, line in enumerate(f):
-            # Handle Settings
-            if line.startswith('$VERSION'):
-                _, value = line.split('=', 1)
-                if not value.strip() == STORAGE_FILE_VERSION:
-                    raise ValueError('Incompatible storage file version')
-            else:
-                mid, name, addr, host, port, user = line.split(';', 5)
-                machines.append(Machine(int(mid), name, addr, host, port, user.strip()))
-
-
 def main():
     logger.info('Starting Shepherd bot version {v}'.format(v=version.V))
     if not config.VERIFY_HOST_KEYS:
         logger.warning('Verification of host keys for SSH connections is deactivated.')
-    read_savefile(config.STORAGE_PATH)
+    global machines
+    global commands
+    machines=read_machines_file(config.MACHINES_STORAGE_PATH)
+    commands=read_commands_file(config.COMMANDS_STORAGE_PATH)
 
     # Set up updater
     updater = Updater(config.TOKEN, use_context=True)
@@ -425,6 +428,7 @@ def main():
     disp.add_handler(CommandHandler('add',     cmd_add,      pass_args=True))
     disp.add_handler(CommandHandler('remove',  cmd_remove,   pass_args=True))
     disp.add_handler(CommandHandler('shutdown',    cmd_shutdown,     pass_args=True))
+    disp.add_handler(CommandHandler('command', cmd_command, pass_args=True))
 
     disp.add_error_handler(error)
 
