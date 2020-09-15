@@ -1,5 +1,11 @@
 # Changelog
 
+## Shepherd 3.1.0
+
+- Added `/command` command
+- Refactor of storage related methods
+- Add support for commands.csv file
+
 ## Shepherd 3.0.1
 
 - Change versioning to "semantic versioning" with 3 Elements to a version number (MAJOR.MINOR.PATCH)

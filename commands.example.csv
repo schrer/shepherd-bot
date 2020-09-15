@@ -1,3 +1,3 @@
 $VERSION=1.0
-1;command1;ssh;bash ~/script1.sh
-2;command2;ssh;bash ~/script2.sh
+1;comm1;ssh;bash ~/scripts/test/script1.sh;Runs script1.sh
+2;comm2;ssh;bash ~/scripts/test/script2.sh;Runs script2.sh
