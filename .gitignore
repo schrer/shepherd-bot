@@ -1,6 +1,5 @@
 # Configuration files
 config.py
-mac-addresses.csv
 machines.csv
 commands.csv
 

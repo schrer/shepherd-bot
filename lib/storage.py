@@ -1,9 +1,8 @@
 import os.path
 import logging
-
-import config
-from utils import (is_not_blank)
-from commands import (CommandType, Command, SSHCommand)
+import config.config as config
+from lib.utils import (is_not_blank)
+from lib.commands import (CommandType, Command, SSHCommand)
 
 # Compatible machine file version with this code
 MACHINE_FILE_VERSION = '3.0'

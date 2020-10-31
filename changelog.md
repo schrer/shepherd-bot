@@ -1,5 +1,10 @@
 # Changelog
 
+## Shepherd 3.2.0
+
+- Move all config relevant files to a common directory (./config)
+- Create lib-folder for helper modules
+
 ## Shepherd 3.1.0
 
 - Added `/command` command

@@ -15,15 +15,14 @@ import requests
 from paramiko.ssh_exception import (SSHException)
 
 import version
-import config
-import wol
-import sshcontrol
-import storage
-from storage import (Machine, 
+import config.config as config
+import lib.wol as wol
+import lib.sshcontrol as sshcontrol
+from lib.storage import (Machine, 
                      write_machines_file, read_machines_file,
                      read_commands_file)
-from utils import (is_not_blank, normalize_mac_address, get_highest_id, is_valid_name, find_by_name, check_ssh_setup)
-from commands import (Command, SSHCommand, execute_command)
+from lib.utils import (normalize_mac_address, get_highest_id, is_valid_name, find_by_name, check_ssh_setup)
+from lib.commands import (execute_command)
 
 logging.basicConfig(
         format=config.LOG_FORMAT,

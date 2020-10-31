@@ -1,8 +1,8 @@
 import logging
 from enum import Enum
 
-import config
-from sshcontrol import (run_remote_command)
+import config.config as config
+from lib.sshcontrol import (run_remote_command)
 
 logging.basicConfig(
         format=config.LOG_FORMAT,

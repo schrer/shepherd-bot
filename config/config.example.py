@@ -7,10 +7,10 @@ TOKEN='123456789:abcxdefghijklmnopqrs-tuvwxyzabcdefg'
 ALLOWED_USERS=['123456789', '123123123']
 
 # Location to store the saved machines
-MACHINES_STORAGE_PATH='/opt/shepherd-bot/machines.csv'
+MACHINES_STORAGE_PATH='/opt/shepherd-bot/config/machines.csv'
 
 # Location to store the saved commands
-COMMANDS_STORAGE_PATH='/opt/shepherd-bot/commands.csv'
+COMMANDS_STORAGE_PATH='/opt/shepherd-bot/config/commands.csv'
 
 # Separator to use when printing addresses
 MAC_ADDR_SEPARATOR='-'
