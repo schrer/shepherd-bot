@@ -1,8 +1,8 @@
 import logging
 from enum import Enum
 
-import config
-from sshcontrol import (run_remote_command)
+import config.config as config
+from lib.sshcontrol import (run_remote_command)
 
 logging.basicConfig(
         format=config.LOG_FORMAT,
@@ -15,15 +15,16 @@ class CommandType(Enum):
     
 class Command:
     type = CommandType.GENERIC
-    def __init__(self, mid, name, description):
+    def __init__(self, mid, name, description, permission):
         self.id = mid
         self.name = name
         self.description = description
+        self.permission = permission
 
 class SSHCommand(Command):
     type = CommandType.SSH
-    def __init__(self, mid, name, description, command):
-        super(SSHCommand, self).__init__(mid, name, description)
+    def __init__(self, mid, name, description, command, permission):
+        super(SSHCommand, self).__init__(mid, name, description, permission)
         self.command = command
 
 def execute_command(command, machine):

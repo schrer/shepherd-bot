@@ -1,8 +1,8 @@
 # Configuration files
 config.py
-mac-addresses.csv
 machines.csv
 commands.csv
+users.csv
 
 # Python environment files
 __pycache__

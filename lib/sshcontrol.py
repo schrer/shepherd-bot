@@ -1,7 +1,7 @@
 import paramiko
 import socket
 import logging
-import config
+import config.config as config
 from paramiko.client import (SSHClient)
 from paramiko.ssh_exception import (SSHException)
 

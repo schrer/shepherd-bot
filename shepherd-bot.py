@@ -3,6 +3,7 @@
 
 import logging
 import re
+from enum import Enum
 
 from telegram import (InlineKeyboardButton,
         InlineKeyboardMarkup)
@@ -15,15 +16,15 @@ import requests
 from paramiko.ssh_exception import (SSHException)
 
 import version
-import config
-import wol
-import sshcontrol
-import storage
-from storage import (Machine, 
+import config.config as config
+import lib.wol as wol
+import lib.sshcontrol as sshcontrol
+import lib.permission as perm
+from lib.storage import (Machine, 
                      write_machines_file, read_machines_file,
                      read_commands_file)
-from utils import (is_not_blank, normalize_mac_address, get_highest_id, is_valid_name, find_by_name, check_ssh_setup)
-from commands import (Command, SSHCommand, execute_command)
+from lib.utils import (normalize_mac_address, get_highest_id, is_valid_name, find_by_name, check_ssh_setup)
+from lib.commands import (execute_command)
 
 logging.basicConfig(
         format=config.LOG_FORMAT,
@@ -32,12 +33,19 @@ logger = logging.getLogger(__name__)
 machines = []
 commands = []
 
+class DefaultPerms(Enum):
+    MACHINES='machines'
+    WAKE='wake'
+    SHUTDOWN='shutdown'
+
 ##
 # Command Handlers
 ##
 
 def cmd_help(update, context):
     log_call(update)
+    if not identify(update):
+        return
     help_message = """
 Shepherd v{v}
 
@@ -78,7 +86,8 @@ Mac addresses can use any or no separator
 def cmd_wake(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(update):
+    CMD_PERMISSION=DefaultPerms.WAKE.value
+    if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
 
     # When no args are supplied
@@ -120,8 +129,10 @@ def cmd_wake_keyboard_handler(update, context):
 def cmd_wake_mac(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(update):
+    CMD_PERMISSION=DefaultPerms.WAKE.value
+    if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
+    
     args = context.args
     if len(args) < 1:
         update.message.reply_text('Please supply a mac address')
@@ -134,7 +145,8 @@ def cmd_wake_mac(update, context):
 def cmd_shutdown(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(update):
+    CMD_PERMISSION=DefaultPerms.SHUTDOWN.value
+    if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
 
     args = context.args
@@ -171,7 +183,8 @@ def cmd_shutdown(update, context):
 def cmd_list(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(update):
+    CMD_PERMISSION=DefaultPerms.WAKE.value
+    if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
 
     # Print all stored machines
@@ -184,7 +197,8 @@ def cmd_list(update, context):
 def cmd_add(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(update):
+    CMD_PERMISSION='machines'
+    if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
     args = context.args
     if len(args) != 2:
@@ -224,7 +238,8 @@ def cmd_add(update, context):
 def cmd_remove(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(update):
+    CMD_PERMISSION=DefaultPerms.MACHINES.value
+    if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
     args = context.args
     if len(args) < 1:
@@ -253,7 +268,7 @@ def cmd_remove(update, context):
 def cmd_ip(update, context):
     log_call(update)
     # Check correctness of call
-    if not authorize(update):
+    if not identify(update):
         return
 
     try:
@@ -272,7 +287,7 @@ def cmd_ip(update, context):
 def cmd_command(update, context):
     log_call(update)
     
-    if not authorize(update):
+    if not identify(update):
         return
     
     if len(machines) == 0:
@@ -296,11 +311,16 @@ def cmd_command(update, context):
         command_name = args[1]
     
     command = find_by_name(commands, command_name)
-    machine = find_by_name(machines, machine_name)
     
     if command is None:
-        update.message.reply_text('Could not find command {cmd}.'.format(cmd=command_name))
+        update.message.reply_text('Could not find command "{cmd}"'.format(cmd=command_name))
         return
+    
+    CMD_PERMISSION=command.permission
+    if not authorize(update, CMD_PERMISSION):
+        return
+    
+    machine = find_by_name(machines, machine_name)
     
     if machine is None:
         update.message.reply_text('Could not find machine {machine}.'.format(machine=machine_name))
@@ -387,13 +407,8 @@ def generate_machine_keyboard(machines):
         kbd.append([btn])
     return kbd
 
-
-def user_is_allowed(uid):
-    return str(uid) in config.ALLOWED_USERS
-
-
-def authorize(update):
-    if not user_is_allowed(update.message.from_user.id):
+def identify(update):
+    if not perm.is_known_user(update.message.from_user.id):
         logger.warning('Unknown User {fn} {ln} [{i}] tried to call bot'.format(
                 fn=update.message.from_user.first_name,
                 ln=update.message.from_user.last_name,
@@ -404,6 +419,17 @@ def authorize(update):
         return False
     return True
 
+def authorize(update, permission):
+    if not perm.has_permission(update.message.from_user.id, permission):
+        name = perm.get_user_name(update.message.from_user.id)
+        logger.warning('User {na} [{id}] tried to use permission "{pe}" but does not have it'.format(
+            na=name,
+            id=update.message.from_user.id,
+            pe=permission))
+        update.message.reply_text('Sorry, but you are not authorized to run this command.\n'
+                + 'Ask your bot admin if you think you should get access.')
+        return False
+    return True
 
 def main():
     logger.info('Starting Shepherd bot version {v}'.format(v=version.V))
@@ -413,6 +439,7 @@ def main():
     global commands
     machines=read_machines_file(config.MACHINES_STORAGE_PATH)
     commands=read_commands_file(config.COMMANDS_STORAGE_PATH)
+    perm.load_users()
 
     # Set up updater
     updater = Updater(config.TOKEN, use_context=True)

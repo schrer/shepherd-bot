@@ -1,14 +1,15 @@
 import os.path
 import logging
-
-import config
-from utils import (is_not_blank)
-from commands import (CommandType, Command, SSHCommand)
+import config.config as config
+from lib.utils import (is_not_blank)
+from lib.commands import (CommandType, Command, SSHCommand)
 
 # Compatible machine file version with this code
 MACHINE_FILE_VERSION = '3.0'
 # Compatible command file version with this code
-COMMAND_FILE_VERSION = '1.0'
+COMMAND_FILE_VERSION = '2.0'
+# Compatible user file version with this code
+USER_FILE_VERSION = '1.0'
 
 logging.basicConfig(
         format=config.LOG_FORMAT,
@@ -24,6 +25,13 @@ class Machine:
         self.port = port
         self.user = user
 
+class User:
+    def __init__(self, id, name, telegram_id, permissions):
+        self.id = id
+        self.name = name
+        self.telegram_id = str(telegram_id)
+        self.permissions = permissions
+
 def write_machines_file(path, machines):
     return __write_storage_file(path, machines, __machine_to_line, MACHINE_FILE_VERSION)
 
@@ -33,6 +41,8 @@ def read_machines_file(path):
 def read_commands_file(path):
     return __read_storage_file(path, __line_to_command, COMMAND_FILE_VERSION)
 
+def read_users_file(path):
+    return __read_storage_file(path, __line_to_user, USER_FILE_VERSION)
 
 def __write_storage_file(path, machines, object_converter, filespec_version):
     logger.info('Writing stored machines to "{p}"'.format(p=path))
@@ -57,10 +67,12 @@ def __read_storage_file(path, line_converter, filespec_version):
         return
     with open(path, 'r') as f:
         for i, line in enumerate(f):
+            # Remove all whitespaces
+            line = "".join(line.split())
             # Handle Settings
             if line.startswith('$VERSION'):
                 _, value = line.split('=', 1)
-                if not value.strip() == filespec_version:
+                if not value == filespec_version:
                     raise ValueError('Incompatible storage file version')
             else:
                 objects.append(line_converter(line))
@@ -75,10 +87,19 @@ def __machine_to_line(machine):
 
 def __line_to_machine(line):
     mid, name, addr, host, port, user = line.split(';', 5)
-    return Machine(int(mid), name, addr, host, port, user.strip())
+    return Machine(int(mid), name, addr, host, port, user)
 
 def __line_to_command(line):
-    mid, name, type, command, description = line.split(';', 4)
+    cid, name, type, command, description, permission = line.split(';', 5)
     if SSHCommand.type.value == type:
-        return SSHCommand(int(mid), name, description, command)
-    return Command(int(mid), name, description)
+        return SSHCommand(int(cid), name, description, command, permission)
+    return Command(int(cid), name, description, permission)
+
+def __line_to_user(line):
+    uid, name, telegram_id, permissions = line.split(';', 3)
+    permissionList = __get_permissions_for_stringlist(permissions)
+    return User(uid, name, telegram_id, permissionList)
+    
+def __get_permissions_for_stringlist(value):
+    permissions = value.split(',')
+    return permissions

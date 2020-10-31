@@ -28,21 +28,29 @@ $ git clone url /opt/shepherd-bot
 $ cd /opt/shepherd-bot
 ```
 
-Edit the config with your favorite editor (aka `nano`)
+All config files are in the subfolder `config`.
+```
+$ cd config
+```
+
+For all config files (`config.py`,`users.csv`,`machines.csv`,`commands.csv`) there is an example file. Copy or rename them to omit the `example` from their name and edit the config with your favorite editor (aka `nano`) like this:
 ```
 $ cp config.example.py config.py
 $ nano config.py
 ```
-
-Set up commands for the `/command` keyword.
+`users.csv`: Set up users that are allowed to use the bot and give them permissions. If you want to give several permissions to one user separate them with a comma, giving the permission "\*" will give this user all available permissions:
 ```
-$ cp commands.example.csv commands.csv
-$ nano commands.csv
+id;name;chatid;permissions
 ```
 
-The colums in the CSV are the following (also see commands.example.csv for example lines):
+`commands.csv`: Set up commands for the `/command` keyword. The colums in the CSV are the following (also see commands.example.csv for example lines):
 ```
-id;name;type;command;description
+id;name;type;command;description;permission
+```
+
+`machines.csv`: Setting up machines manually is optional, since you can let the bot add MAC addresses for the wake command only with a dedicated command, but if you want to use them for SSH commands (`shutdown`, commands defined in `commands.csv`) you need to manually edit the file:
+```
+id;machineName;mac-address;ip-address;ssh-port;username
 ```
 
 Set up the Python environment
