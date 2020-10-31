@@ -4,6 +4,7 @@
 
 - Move all config relevant files to a common directory (./config)
 - Create lib-folder for helper modules
+- Permission management via users.csv file
 
 ## Shepherd 3.1.0
 
