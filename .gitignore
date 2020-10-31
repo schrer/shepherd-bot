@@ -2,6 +2,7 @@
 config.py
 machines.csv
 commands.csv
+users.csv
 
 # Python environment files
 __pycache__
