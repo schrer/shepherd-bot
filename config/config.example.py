@@ -9,7 +9,7 @@ MACHINES_STORAGE_PATH='/opt/shepherd-bot/config/machines.csv'
 # Location to store the saved commands
 COMMANDS_STORAGE_PATH='/opt/shepherd-bot/config/commands.csv'
 
-# Location to store the saved commands
+# Location to store the saved users
 USERS_STORAGE_PATH='/opt/shepherd-bot/config/users.csv'
 
 # Separator to use when printing addresses
