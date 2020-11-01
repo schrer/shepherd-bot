@@ -68,11 +68,11 @@ def __read_storage_file(path, line_converter, filespec_version):
     with open(path, 'r') as f:
         for i, line in enumerate(f):
             # Remove all whitespaces
-            line = "".join(line.split())
+            line = line.strip()
             # Handle Settings
             if line.startswith('$VERSION'):
                 _, value = line.split('=', 1)
-                if not value == filespec_version:
+                if not value.strip() == filespec_version:
                     raise ValueError('Incompatible storage file version')
             else:
                 objects.append(line_converter(line))
@@ -86,16 +86,22 @@ def __machine_to_line(machine):
     return '{i};{n};{a};;;\n'.format(i=machine.id, n=machine.name, a=machine.addr)
 
 def __line_to_machine(line):
+    line = "".join(line.split())
     mid, name, addr, host, port, user = line.split(';', 5)
     return Machine(int(mid), name, addr, host, port, user)
 
 def __line_to_command(line):
     cid, name, type, command, description, permission = line.split(';', 5)
+    cid = "".join(cid.split())
+    name = "".join(name.split())
+    command = "".join(command.split())
+    permission = "".join(permission.split())
     if SSHCommand.type.value == type:
         return SSHCommand(int(cid), name, description, command, permission)
     return Command(int(cid), name, description, permission)
 
 def __line_to_user(line):
+    line = "".join(line.split())
     uid, name, telegram_id, permissions = line.split(';', 3)
     permissionList = __get_permissions_for_stringlist(permissions)
     return User(uid, name, telegram_id, permissionList)
