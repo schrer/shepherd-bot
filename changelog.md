@@ -1,5 +1,9 @@
 # Changelog
 
+## Shepherd 3.2.1
+
+- Fix minor bug that caused command descriptions to show up without whitespaces
+
 ## Shepherd 3.2.0
 
 - Move all config relevant files to a common directory (./config)
