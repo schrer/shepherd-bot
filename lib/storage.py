@@ -94,7 +94,6 @@ def __line_to_command(line):
     cid, name, type, command, description, permission = line.split(';', 5)
     cid = "".join(cid.split())
     name = "".join(name.split())
-    command = "".join(command.split())
     permission = "".join(permission.split())
     if SSHCommand.type.value == type:
         return SSHCommand(int(cid), name, description, command, permission)
