@@ -29,3 +29,9 @@ LOG_LEVEL=logging.INFO
 
 # Turn verification of host keys off or on. Not advisible, only turn off in private networks and for testing purposes, if ever
 VERIFY_HOST_KEYS=True
+
+PERM_WAKE='wake'
+PERM_SHUTDOWN='shutdown'
+PERM_LIST=PERM_WAKE
+PERM_WAKEMAC=PERM_WAKE
+PERM_PING=PERM_WAKE

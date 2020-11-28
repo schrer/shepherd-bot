@@ -20,10 +20,8 @@ import config.config as config
 import lib.wol as wol
 import lib.sshcontrol as sshcontrol
 import lib.permission as perm
-from lib.storage import (Machine, 
-                     write_machines_file, read_machines_file,
-                     read_commands_file)
-from lib.utils import (normalize_mac_address, get_highest_id, is_valid_name, find_by_name, check_ssh_setup)
+from lib.storage import (Machine, read_machines_file, read_commands_file)
+from lib.utils import (normalize_mac_address, get_highest_id, is_valid_name, find_by_name, check_ssh_setup, ping_server)
 from lib.commands import (execute_command)
 
 logging.basicConfig(
@@ -32,11 +30,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 machines = []
 commands = []
-
-class DefaultPerms(Enum):
-    MACHINES='machines'
-    WAKE='wake'
-    SHUTDOWN='shutdown'
 
 ##
 # Command Handlers
@@ -54,7 +47,6 @@ Shepherd v{v}
 
 /wake [name]
     Wake saved machine with name
-    If no name is supplied, a selection menu will be shown
 
 /wakemac <mac>
     Wake machine with mac address
@@ -63,30 +55,27 @@ Shepherd v{v}
     Shutdown saved machine with name
     
 /command [name] <command>
-    Run command on machine via SSH. If neither machine name nor command are specified, a list of supported commands is sent.
+    Run command on machine via SSH. If neither machine name nor command are specified, a list of supported commands is sent
+
+/ping [name]
+    Ping a server to check if it is online and reachable by the bot
 
 /list
     List all saved machines
 
-/add <name> <mac>
-    Add a machine
-
-/remove <name>
-    Remove a machine
-
 /ip
     Get the public IP address of the network Shepherd is in
 
-Names may only contain a-z, 0-9 and _
-Mac addresses can use any or no separator
-    """.format(v=version.V)
+Names are only required if more than one machine is configured and may only contain a-z, 0-9 and _
+Mac addresses can use the separator '{separator}'
+    """.format(v=version.V, separator=config.MAC_ADDR_SEPARATOR)
     update.message.reply_text(help_message)
 
 
 def cmd_wake(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION=DefaultPerms.WAKE.value
+    CMD_PERMISSION=config.PERM_WAKE
     if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
 
@@ -94,7 +83,7 @@ def cmd_wake(update, context):
     args = context.args
     if len(args) < 1 and len(machines) != 1:
         if not len(machines):
-            update.message.reply_text('Please add a machine with the /add command first!')
+            update.message.reply_text('Please add a machine in the configuration first!')
         markup = InlineKeyboardMarkup(generate_machine_keyboard(machines))
         update.message.reply_text('Please select a machine to wake:', reply_markup=markup)
         return
@@ -129,7 +118,7 @@ def cmd_wake_keyboard_handler(update, context):
 def cmd_wake_mac(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION=DefaultPerms.WAKE.value
+    CMD_PERMISSION=config.PERM_WAKEMAC
     if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
     
@@ -145,7 +134,7 @@ def cmd_wake_mac(update, context):
 def cmd_shutdown(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION=DefaultPerms.SHUTDOWN.value
+    CMD_PERMISSION=config.PERM_SHUTDOWN
     if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
 
@@ -153,7 +142,7 @@ def cmd_shutdown(update, context):
     # When no args are supplied
     if len(args) < 1 and len(machines) != 1:
         if not len(machines):
-            update.message.reply_text('Please add a machine with the /add command first!')
+            update.message.reply_text('Please add a machine in the configuration first!')
         markup = InlineKeyboardMarkup(generate_machine_keyboard(machines))
         update.message.reply_text('Please select a machine to wake:', reply_markup=markup)
         return
@@ -183,7 +172,7 @@ def cmd_shutdown(update, context):
 def cmd_list(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION=DefaultPerms.WAKE.value
+    CMD_PERMISSION=config.PERM_LIST
     if not identify(update) or not authorize(update, CMD_PERMISSION):
         return
 
@@ -192,78 +181,6 @@ def cmd_list(update, context):
     for m in machines:
         msg += '#{i}: "{n}" → {a}\n'.format(i=m.id, n=m.name, a=m.addr)
     update.message.reply_text(msg)
-
-
-def cmd_add(update, context):
-    log_call(update)
-    # Check correctness of call
-    CMD_PERMISSION='machines'
-    if not identify(update) or not authorize(update, CMD_PERMISSION):
-        return
-    args = context.args
-    if len(args) != 2:
-        update.message.reply_text('Please supply a name and mac address')
-        return
-
-    # Parse arguments
-    machine_name = args[0]
-    addr = args[1]
-
-    # Validate and normalize arguments
-    if any(m.name == machine_name for m in machines):
-        update.message.reply_text('Name already added')
-        return
-
-    if not is_valid_name(machine_name):
-        update.message.reply_text('Name is invalid')
-        return
-
-    try:
-        addr = normalize_mac_address(addr)
-    except ValueError as e:
-        update.message.reply_text(str(e))
-        return
-
-    # Add machine to list
-    machines.append(Machine(get_highest_id(machines)+1, machine_name, addr))
-    update.message.reply_text('Added new machine')
-
-    # Save list
-    try:
-        write_machines_file(config.MACHINES_STORAGE_PATH, machines)
-    except:
-        update.message.reply_text('Could not write changes to disk')
-
-
-def cmd_remove(update, context):
-    log_call(update)
-    # Check correctness of call
-    CMD_PERMISSION=DefaultPerms.MACHINES.value
-    if not identify(update) or not authorize(update, CMD_PERMISSION):
-        return
-    args = context.args
-    if len(args) < 1:
-        update.message.reply_text('Please supply a name')
-        return
-
-    # Parse arguments and look for machine to be deleted
-    machine_name = args[0]
-    if not any(m.name == machine_name for m in machines):
-        update.message.reply_text('Could not find ' + machine_name)
-        return
-
-    # Delete machine
-    for i, m in enumerate(machines):
-        if m.name == machine_name:
-            del machines[i]
-            update.message.reply_text('Removed machine ' + machine_name)
-
-    # Save list
-    try:
-        write_machines_file(config.MACHINES_STORAGE_PATH, machines)
-    except:
-        update.message.reply_text('Could not write changes to disk')
-
 
 def cmd_ip(update, context):
     log_call(update)
@@ -291,7 +208,7 @@ def cmd_command(update, context):
         return
     
     if len(machines) == 0:
-        update.message.reply_text('No machines are registered. Use the /add command or edit the bot configuration directly.')
+        update.message.reply_text('No machines are registered. Please add a machine in the configuration first!')
         return
         
     args = context.args
@@ -341,6 +258,40 @@ def cmd_command(update, context):
         update.message.reply_text('An unexpected error occurred: {e}'.format(e=str(e)))
         return
 
+def cmd_ping(update, context):
+    log_call(update)
+    # Check correctness of call
+    CMD_PERMISSION=config.PERM_PING
+    if not identify(update) or not authorize(update, CMD_PERMISSION):
+        return
+
+    # When no args are supplied
+    args = context.args
+    if len(args) < 1 and len(machines) != 1:
+        if not len(machines):
+            update.message.reply_text('Please add a machine with in the configuration first!')
+        markup = InlineKeyboardMarkup(generate_machine_keyboard(machines))
+        update.message.reply_text('Please select a machine to wake:', reply_markup=markup)
+        return
+
+    if len(args) > 1:
+        update.message.reply_text('Please supply only a machine name')
+        return
+
+    # Parse arguments and send WoL packets
+    if len(args) == 0:
+        machine_name = machines[0].name
+    else:
+        machine_name = args[0]
+    for m in machines:
+        if m.name == machine_name:
+            if ping_server(m.host):
+                update.message.reply_text('Pong\nServer is running.')
+            else:
+                update.message.reply_text('Could not reach {name} under IP {host}'.format(name=m.name, host=m.host))
+            return
+    update.message.reply_text('Could not find ' + machine_name)
+
 def list_commands(update):
     msg = '{num} Stored Commands:\n'.format(num=len(commands))
     for c in commands:
@@ -355,7 +306,6 @@ def list_commands(update):
 
 def error(update, context):
     logger.warning('Update "{u}" caused error "{e}"'.format(u=update, e=context.error))
-
 
 def log_call(update):
     uid = update.message.from_user.id
@@ -452,10 +402,9 @@ def main():
     disp.add_handler(CommandHandler('wake',    cmd_wake,     pass_args=True))
     disp.add_handler(CallbackQueryHandler(cmd_wake_keyboard_handler))
     disp.add_handler(CommandHandler('wakemac', cmd_wake_mac, pass_args=True))
-    disp.add_handler(CommandHandler('add',     cmd_add,      pass_args=True))
-    disp.add_handler(CommandHandler('remove',  cmd_remove,   pass_args=True))
     disp.add_handler(CommandHandler('shutdown',    cmd_shutdown,     pass_args=True))
     disp.add_handler(CommandHandler('command', cmd_command, pass_args=True))
+    disp.add_handler(CommandHandler('ping',cmd_ping, pass_args=True))
 
     disp.add_error_handler(error)
 

@@ -48,10 +48,11 @@ id;name;chatid;permissions
 id;name;type;command;description;permission
 ```
 
-`machines.csv`: Setting up machines manually is optional, since you can let the bot add MAC addresses for the wake command only with a dedicated command, but if you want to use them for SSH commands (`shutdown`, commands defined in `commands.csv`) you need to manually edit the file:
+`machines.csv`: Add servers here, with their MAC address, IP or hostname and other details. Schema is as follows:
 ```
 id;machineName;mac-address;ip-address;ssh-port;username
 ```
+`config.py`: There are several settings in here, like the Telegram API Key that should be used and also settings for permissions and how they are called. Permission management is granular to each command, but by default most of the commands react to the "wake"-permission. This can be changed as needed.
 
 Set up the Python environment
 ```
