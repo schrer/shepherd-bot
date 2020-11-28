@@ -32,9 +32,6 @@ class User:
         self.telegram_id = str(telegram_id)
         self.permissions = permissions
 
-def write_machines_file(path, machines):
-    return __write_storage_file(path, machines, __machine_to_line, MACHINE_FILE_VERSION)
-
 def read_machines_file(path):
     return __read_storage_file(path, __line_to_machine, MACHINE_FILE_VERSION)
 
@@ -43,20 +40,6 @@ def read_commands_file(path):
 
 def read_users_file(path):
     return __read_storage_file(path, __line_to_user, USER_FILE_VERSION)
-
-def __write_storage_file(path, machines, object_converter, filespec_version):
-    logger.info('Writing stored machines to "{p}"'.format(p=path))
-    csv=''
-    # Add meta settings
-    csv += '$VERSION={v}\n'.format(v=filespec_version)
-    
-    # Add data
-    for m in machines:
-        csv += object_converter(m)
-
-    with open(path, 'w') as f:
-        f.write(csv)
-
 
 def __read_storage_file(path, line_converter, filespec_version):
     objects = []
@@ -78,12 +61,6 @@ def __read_storage_file(path, line_converter, filespec_version):
                 objects.append(line_converter(line))
 
     return objects
-
-
-def __machine_to_line(machine):
-    if is_not_blank(m.host) and is_not_blank(m.user) and not m.port==None:
-        return '{i};{n};{a};{h};{p};{u}\n'.format(i=machine.id, n=machine.name, a=machine.addr, h=machine.host, p=machine.port, u=machine.user)
-    return '{i};{n};{a};;;\n'.format(i=machine.id, n=machine.name, a=machine.addr)
 
 def __line_to_machine(line):
     line = "".join(line.split())

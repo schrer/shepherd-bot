@@ -1,4 +1,16 @@
 import re
+import platform
+import subprocess
+
+def ping_server(hostname):
+    """
+    Returns True if host (str) responds to a ping request.
+    """
+
+    # Option for the number of packets
+    param = '-n' if platform.system().lower()=='windows' else '-c'
+    command = ['ping', param, '1', hostname]
+    return subprocess.call(command) == 0
 
 def is_valid_name(name):
     pattern = '[^_a-z0-9]'

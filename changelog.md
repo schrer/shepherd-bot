@@ -1,5 +1,12 @@
 # Changelog
 
+## Shepherd 3.3.0
+
+- Identifiers of permissions are now granular to each command and can be configured in config.py
+- Added `/ping` command to ping a machine and check if it is reachable
+- Remove commands `/add` and `/remove`. Editing of machines is now only possible directly in the file machines.csv
+- Update parts of the `/help` message
+
 ## Shepherd 3.2.1
 
 - Fix minor bug that caused command descriptions to show up without whitespaces
