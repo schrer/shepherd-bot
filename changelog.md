@@ -1,5 +1,9 @@
 # Changelog
 
+## Shepherd unpublished
+
+- Update formatting and clean imports
+
 ## Shepherd 3.3.0
 
 - Identifiers of permissions are now granular to each command and can be configured in config.py
