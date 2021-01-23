@@ -2,7 +2,7 @@ import logging
 
 import config.config as config
 from lib.sshcontrol import (run_remote_command)
-from lib.types import CommandType, Machine
+from lib.types import CommandType, Machine, Command
 
 logging.basicConfig(
     format=config.LOG_FORMAT,
@@ -10,7 +10,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def execute_command(command, machine: Machine) -> str:
+def execute_command(command: Command, machine: Machine) -> str:
     if command.type.value == CommandType.SSH.value:
         logger.info('SSH command. Com: {c} | M: {m}'.format(c=command.name, m=machine.name))
         return run_remote_command(machine.host, machine.port, machine.user, command.command)

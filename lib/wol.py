@@ -5,7 +5,7 @@ import socket
 import struct
 
 
-def wake(mac_address):
+def wake(mac_address: str) -> None:
     """ Switches on remote computers using WOL. """
 
     # Check mac_address format and try to compensate.

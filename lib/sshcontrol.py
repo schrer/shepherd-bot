@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def shutdown(hostname, port, username):
+def shutdown(hostname: str, port: int, username: str):
     """
     Sends a command to the specified hostname to shutdown within 1 minute.
     Requires that the login user is allowed to run shutdown without sudo-password.
@@ -22,7 +22,7 @@ def shutdown(hostname, port, username):
     return run_remote_command(hostname, port, username, command)
 
 
-def run_remote_command(hostname, port, username, command):
+def run_remote_command(hostname: str, port: int, username: str, command: str) -> str:
     """
     Runs a command on a remote machine using SSH.
     
@@ -66,7 +66,7 @@ def run_remote_command(hostname, port, username, command):
     return output
 
 
-def __connect_ssh_client(hostname, port, username):
+def __connect_ssh_client(hostname: str, port: int, username: str) -> SSHClient:
     """
     Opens an SSH connection to the specified host. For authentication, any key from an SSH Agent or
     id_(rsa|ecds|dsa) in ~/.ssh is automatically detected by Paramiko and tried for authentication.
@@ -75,7 +75,7 @@ def __connect_ssh_client(hostname, port, username):
     :param int port: the SSH port of the server
     :param str username: the username for login
     """
-    client = SSHClient()
+    client: SSHClient = SSHClient()
     if config.VERIFY_HOST_KEYS:
         client.load_system_host_keys()
     else:
@@ -84,10 +84,10 @@ def __connect_ssh_client(hostname, port, username):
     return client
 
 
-def __close_ssh_client(client):
+def __close_ssh_client(client: SSHClient) -> None:
     client.close()
 
 
-def __log_command_execution(hostname, port, username, command):
+def __log_command_execution(hostname: str, port: int, username: str, command: str) -> None:
     logger.info('Trying to run command. Host: ' + hostname + ' | Port: ' + str(
         port) + ' | User: ' + username + ' | Command: ' + command)

@@ -1,14 +1,16 @@
 import os.path
 import logging
+from typing import List, Union, Callable
+
 import config.config as config
 from lib.types import Command, SSHCommand, Machine, User
 
 # Compatible machine file version with this code
-MACHINE_FILE_VERSION = '3.0'
+MACHINE_FILE_VERSION: str = '3.0'
 # Compatible command file version with this code
-COMMAND_FILE_VERSION = '2.0'
+COMMAND_FILE_VERSION: str = '2.0'
 # Compatible user file version with this code
-USER_FILE_VERSION = '1.0'
+USER_FILE_VERSION: str = '1.0'
 
 logging.basicConfig(
     format=config.LOG_FORMAT,
@@ -16,19 +18,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def read_machines_file(path):
+def read_machines_file(path: str) -> List[Machine]:
     return __read_storage_file(path, __line_to_machine, MACHINE_FILE_VERSION)
 
 
-def read_commands_file(path):
+def read_commands_file(path: str) -> List[Command]:
     return __read_storage_file(path, __line_to_command, COMMAND_FILE_VERSION)
 
 
-def read_users_file(path):
+def read_users_file(path: str) -> List[User]:
     return __read_storage_file(path, __line_to_user, USER_FILE_VERSION)
 
 
-def __read_storage_file(path, line_converter, filespec_version):
+def __read_storage_file(path: str, line_converter: Callable[[str], Union[User, Machine, Command]],
+                        filespec_version: str) -> Union[List[Union[User, Machine, Command]], None]:
     objects = []
     logger.info('Reading stored entries from "{p}"'.format(p=path))
     # Warning: file contents will not be validated
@@ -50,13 +53,13 @@ def __read_storage_file(path, line_converter, filespec_version):
     return objects
 
 
-def __line_to_machine(line):
+def __line_to_machine(line: str) -> Machine:
     line = "".join(line.split())
     mid, name, addr, host, port, user = line.split(';', 5)
     return Machine(int(mid), name, addr, host, port, user)
 
 
-def __line_to_command(line):
+def __line_to_command(line: str) -> Command:
     cid, name, command_type, command, description, permission = line.split(';', 5)
     cid = "".join(cid.split())
     name = "".join(name.split())
@@ -66,13 +69,13 @@ def __line_to_command(line):
     return Command(int(cid), name, description, permission)
 
 
-def __line_to_user(line):
+def __line_to_user(line: str) -> User:
     line = "".join(line.split())
     uid, name, telegram_id, permissions = line.split(';', 3)
     permission_list = __get_permissions_for_stringlist(permissions)
-    return User(uid, name, telegram_id, permission_list)
+    return User(int(uid), name, telegram_id, permission_list)
 
 
-def __get_permissions_for_stringlist(value):
+def __get_permissions_for_stringlist(value: str) -> List[str]:
     permissions = value.split(',')
     return permissions

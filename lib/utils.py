@@ -1,10 +1,13 @@
 import re
 import platform
 import subprocess
+from typing import List, Union
+
 import config.config as config
+from lib.types import Machine, Command, User
 
 
-def ping_server(hostname):
+def ping_server(hostname: str) -> bool:
     """
     Returns True if host (str) responds to a ping request.
     """
@@ -15,12 +18,12 @@ def ping_server(hostname):
     return subprocess.call(command) == 0
 
 
-def is_valid_name(name):
+def is_valid_name(name: str) -> bool:
     pattern = '[^_a-z0-9]'
     return not re.search(pattern, name)
 
 
-def normalize_mac_address(address):
+def normalize_mac_address(address: str) -> str:
     if len(address) == 12:
         pass
         return config.MAC_ADDR_SEPARATOR.join(
@@ -32,7 +35,7 @@ def normalize_mac_address(address):
         raise ValueError('Incorrect MAC address format')
 
 
-def get_highest_id(elements):
+def get_highest_id(elements: List[Union[Machine, Command, User]]) -> int:
     highest = -1
     for m in elements:
         if m.id > highest:
@@ -40,16 +43,16 @@ def get_highest_id(elements):
     return highest
 
 
-def is_not_blank(string):
+def is_not_blank(string: str) -> bool:
     return bool(string and string.strip())
 
 
-def find_by_name(objects, name):
+def find_by_name(objects: List[Union[Machine, Command, User]], name: str) -> Union[Machine, Command, User, None]:
     for o in objects:
         if o.name == name:
             return o
     return None
 
 
-def check_ssh_setup(machine):
+def check_ssh_setup(machine: Machine):
     return is_not_blank(machine.host) and is_not_blank(machine.user) and machine.port is not None
