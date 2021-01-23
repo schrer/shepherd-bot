@@ -1,7 +1,7 @@
 import os.path
 import logging
 import config.config as config
-from lib.commands import (Command, SSHCommand)
+from lib.types import Command, SSHCommand, Machine, User
 
 # Compatible machine file version with this code
 MACHINE_FILE_VERSION = '3.0'
@@ -14,24 +14,6 @@ logging.basicConfig(
     format=config.LOG_FORMAT,
     level=config.LOG_LEVEL)
 logger = logging.getLogger(__name__)
-
-
-class Machine:
-    def __init__(self, mid, name, addr, host=None, port=22, user=None):
-        self.id = mid
-        self.name = name
-        self.addr = addr
-        self.host = host
-        self.port = port
-        self.user = user
-
-
-class User:
-    def __init__(self, uid, name, telegram_id, permissions):
-        self.id = uid
-        self.name = name
-        self.telegram_id = str(telegram_id)
-        self.permissions = permissions
 
 
 def read_machines_file(path):

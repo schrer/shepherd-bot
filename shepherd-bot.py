@@ -73,8 +73,8 @@ Mac addresses can use the separator '{separator}'
 def cmd_wake(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION = config.PERM_WAKE
-    if not identify(update) or not authorize(update, CMD_PERMISSION):
+    cmd_permission = config.PERM_WAKE
+    if not identify(update) or not authorize(update, cmd_permission):
         return
 
     # When no args are supplied
@@ -116,8 +116,8 @@ def cmd_wake_keyboard_handler(update, context):
 def cmd_wake_mac(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION = config.PERM_WAKEMAC
-    if not identify(update) or not authorize(update, CMD_PERMISSION):
+    cmd_permission = config.PERM_WAKEMAC
+    if not identify(update) or not authorize(update, cmd_permission):
         return
 
     args = context.args
@@ -133,8 +133,8 @@ def cmd_wake_mac(update, context):
 def cmd_shutdown(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION = config.PERM_SHUTDOWN
-    if not identify(update) or not authorize(update, CMD_PERMISSION):
+    cmd_permission = config.PERM_SHUTDOWN
+    if not identify(update) or not authorize(update, cmd_permission):
         return
 
     args = context.args
@@ -171,8 +171,8 @@ def cmd_shutdown(update, context):
 def cmd_list(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION = config.PERM_LIST
-    if not identify(update) or not authorize(update, CMD_PERMISSION):
+    cmd_permission = config.PERM_LIST
+    if not identify(update) or not authorize(update, cmd_permission):
         return
 
     # Print all stored machines
@@ -234,8 +234,8 @@ def cmd_command(update, context):
         update.message.reply_text('Could not find command "{cmd}"'.format(cmd=command_name))
         return
 
-    CMD_PERMISSION = command.permission
-    if not authorize(update, CMD_PERMISSION):
+    cmd_permission = command.permission
+    if not authorize(update, cmd_permission):
         return
 
     machine = find_by_name(machines, machine_name)
@@ -263,8 +263,8 @@ def cmd_command(update, context):
 def cmd_ping(update, context):
     log_call(update)
     # Check correctness of call
-    CMD_PERMISSION = config.PERM_PING
-    if not identify(update) or not authorize(update, CMD_PERMISSION):
+    cmd_permission = config.PERM_PING
+    if not identify(update) or not authorize(update, cmd_permission):
         return
 
     # When no args are supplied
@@ -341,7 +341,7 @@ def send_magic_packet(update, mac_address, display_name):
 
 def send_shutdown_command(update, hostname, port, user, display_name):
     try:
-        cmdOutput = ssh_control.shutdown(hostname, port, user)
+        cmd_output = ssh_control.shutdown(hostname, port, user)
     except ValueError as e:
         update.message.reply_text(str(e))
         return
@@ -351,7 +351,7 @@ def send_shutdown_command(update, hostname, port, user, display_name):
         return
 
     poke = 'Shutdown command sent to {name}. Output:\n{output}'.format(
-        name=display_name, output=cmdOutput)
+        name=display_name, output=cmd_output)
 
     if update.callback_query:
         update.callback_query.edit_message_text(poke)
