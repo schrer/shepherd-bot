@@ -6,6 +6,8 @@ import config.config as config
 from lib.types import Command, SSHCommand, Machine, User
 
 # Compatible machine file version with this code
+from lib.utils import is_not_blank
+
 MACHINE_FILE_VERSION: str = '3.0'
 # Compatible command file version with this code
 COMMAND_FILE_VERSION: str = '2.0'
@@ -47,8 +49,10 @@ def __read_storage_file(path: str, line_converter: Callable[[str], Union[User, M
                 _, value = line.split('=', 1)
                 if not value.strip() == filespec_version:
                     raise ValueError('Incompatible storage file version')
-            else:
+            elif is_not_blank(line):
                 objects.append(line_converter(line))
+            else:
+                continue
 
     return objects
 
