@@ -1,5 +1,13 @@
 # Changelog
 
+## Shepherd 3.4.0
+
+- Fix bug where CSV files with empty lines could not be read. Empty lines are now allowed at the end and between lines
+- Update formatting and clean imports
+- Move custom types to specific file to make it easier to prevent circular dependencies
+- Add type hints to all method headers
+- Minor changes to readme.md
+
 ## Shepherd 3.3.0
 
 - Identifiers of permissions are now granular to each command and can be configured in config.py

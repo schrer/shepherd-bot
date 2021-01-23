@@ -60,7 +60,7 @@ $ virtualenv shepherd_venv
 $ source shepherd_venv/bin/activate
 (venv)$ pip install -r requirements.txt
 ```
-If any errors occur during the reuirements installation, you are possibly missing some build dependencies. Check from the errors what could be missing and install that with `apt`.
+If any errors occur during the installation of requirements, you are possibly missing some build dependencies. Check from the errors what could be missing and install that with `apt`.
 One that was missing for me was libffi-dev as dependency for cffi, which in turn is a transitive dependency of Shepherd via Paramiko (for SSH connections).
 
 Start the application
@@ -74,7 +74,9 @@ The easiest way is to add the launcher script to `/etc/rc.local`.
 ```
 /opt/shepherd-bot/shepherd-launcher.sh
 ```
+Don't forget to run `chmod +x shepherd-launcher.sh` on the launch script, to make it executable.
 
+### SSH setup
 For all commands that run over SSH, it will also be necessary to do some more setup on the Raspberry Pi and the target machine.
 In order to be able to login when running Shepherd from `/etc/rc.local`, the root user has to have an auth-key available, that is listed as authorized_key on the SSH server (a.k.a. the machine you want to command). This can be done by adding such a key into the directory `/root/.ssh` on the Raspberry Pi.
 
