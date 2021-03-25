@@ -297,6 +297,66 @@ def cmd_ping(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Could not find ' + machine_name)
 
 
+def cmd_list_running_containers(update: Update, context: CallbackContext) -> None:
+    cmd_permission = config.PERM_DOCKER
+    log_call(update)
+
+    if not identify(update):
+        return
+
+    return
+
+
+def cmd_list_available_containers(update: Update, context: CallbackContext) -> None:
+    cmd_permission = config.PERM_DOCKER
+    log_call(update)
+
+    if not identify(update):
+        return
+
+    return
+
+
+def cmd_container_start(update: Update, context: CallbackContext) -> None:
+    cmd_permission = config.PERM_DOCKER
+    log_call(update)
+
+    if not identify(update):
+        return
+
+    return
+
+
+def cmd_container_stop(update: Update, context: CallbackContext) -> None:
+    cmd_permission = config.PERM_DOCKER
+    log_call(update)
+
+    if not identify(update):
+        return
+
+    return
+
+
+def cmd_container_restart(update: Update, context: CallbackContext) -> None:
+    cmd_permission = config.PERM_DOCKER
+    log_call(update)
+
+    if not identify(update):
+        return
+
+    return
+
+
+def cmd_container_health(update: Update, context: CallbackContext) -> None:
+    cmd_permission = config.PERM_DOCKER
+    log_call(update)
+
+    if not identify(update):
+        return
+
+    return
+
+
 def list_commands(update: Update) -> None:
     msg = '{num} Stored Commands:\n'.format(num=len(commands))
     for c in commands:
@@ -419,6 +479,12 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler('shutdown', cmd_shutdown, pass_args=True))
     dispatcher.add_handler(CommandHandler('command', cmd_command, pass_args=True))
     dispatcher.add_handler(CommandHandler('ping', cmd_ping, pass_args=True))
+    dispatcher.add_handler(CommandHandler(''), cmd_list_running_containers, pass_args=True)
+    dispatcher.add_handler(CommandHandler(''), cmd_list_available_containers, pass_args=True)
+    dispatcher.add_handler(CommandHandler(''), cmd_container_start, pass_args=True)
+    dispatcher.add_handler(CommandHandler(''), cmd_container_stop, pass_args=True)
+    dispatcher.add_handler(CommandHandler(''), cmd_container_restart, pass_args=True)
+    dispatcher.add_handler(CommandHandler(''), cmd_container_health, pass_args=True)
 
     dispatcher.add_error_handler(error)
 
