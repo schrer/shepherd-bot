@@ -10,8 +10,8 @@ class CommandType(Enum):
 class Command:
     type: CommandType = CommandType.GENERIC
 
-    def __init__(self, mid: int, name: str, description: str, permission: str):
-        self.id: int = mid
+    def __init__(self, cid: int, name: str, description: str, permission: str):
+        self.id: int = cid
         self.name: str = name
         self.description: str = description
         self.permission: str = permission
@@ -20,8 +20,8 @@ class Command:
 class SSHCommand(Command):
     type: CommandType = CommandType.SSH
 
-    def __init__(self, mid: int, name: str, description: str, permission: str, command: str):
-        super(SSHCommand, self).__init__(mid, name, description, permission)
+    def __init__(self, cid: int, name: str, description: str, permission: str, command: str):
+        super(SSHCommand, self).__init__(cid, name, description, permission)
         self.command: str = command
 
 
