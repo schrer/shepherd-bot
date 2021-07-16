@@ -1,6 +1,6 @@
 # Changelog
 
-## Shepherd 3.4.0
+## Shepherd 3.4.1
 
 - Fix bug that caused command permissions to be interpreted as the command itself for SSH commands
 
