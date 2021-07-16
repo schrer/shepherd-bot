@@ -2,6 +2,10 @@
 
 ## Shepherd 3.4.0
 
+- Fix bug that caused command permissions to be interpreted as the command itself for SSH commands
+
+## Shepherd 3.4.0
+
 - Fix bug where CSV files with empty lines could not be read. Empty lines are now allowed at the end and between lines
 - Update formatting and clean imports
 - Move custom types to specific file to make it easier to prevent circular dependencies
