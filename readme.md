@@ -11,8 +11,8 @@ Wake-on-Lan and SSH Telegram bot
 ## Requirements
 
 ### Bot host
-- python 3
-- Virtualenv
+- python 3.5 or higher
+- python venv extension (package name `python3-venv` on Raspberry Pi OS)
 
 ### Target machines
 - SSH server (only for SSH commands like `/shutdown` and `/command`)
@@ -56,29 +56,69 @@ id;machineName;mac-address;ip-address;ssh-port;username
 
 Set up the Python environment
 ```
-$ virtualenv shepherd_venv
-$ source shepherd_venv/bin/activate
+$ python -m venv ./shepherd_venv
+$ source ./shepherd_venv/bin/activate
 (venv)$ pip install -r requirements.txt
 ```
 If any errors occur during the installation of requirements, you are possibly missing some build dependencies. Check from the errors what could be missing and install that with `apt`.
-One that was missing for me was libffi-dev as dependency for cffi, which in turn is a transitive dependency of Shepherd via Paramiko (for SSH connections).
 
-Start the application
+Known required packages that might need to be installed separately:
+- Raspberry Pi OS Lite 10 (Buster):
+    - libffi-dev: dependency for cffi/Paramiko (Paramiko is used for SSH connections)
+- Raspberry Pi OS Lite 11 (Bullseye):
+    - none
+
+## Starting the bot
 ```
+$ source ./shepherd_venv/bin/activate
 (venv)$ python3 shepherd-bot.py
 ```
 
 ### Autostart on Raspberry Pi
 
-The easiest way is to add the launcher script to `/etc/rc.local`.
+One way to do it is to create a systemd-service that starts the bot launcher script.
+First, make sure you have set up the virtualenv already as described in the last section, the launcher script relies on it. Then make the launcher executable.
 ```
-/opt/shepherd-bot/shepherd-launcher.sh
+$ chmod +x /opt/shepherd-bot/shepherd-launcher.sh
 ```
-Don't forget to run `chmod +x shepherd-launcher.sh` on the launch script, to make it executable.
+
+Create a service file in `/etc/systemd/system` and name it accordingly (in this example it will be called `shepherd-bot.service`). You will need SU-rights to create and edit files in this directory.
+After creating the file open it and add the necessary config.
+
+```
+$ sudo touch /etc/systemd/system/shepherd-bot.service
+$ sudo nano /etc/systemd/system/shepherd-bot.service
+```
+
+Here is an example configuration for the service-file for Raspberry Pi OS 11
+
+```ini
+[Unit]
+Description=Shepherd Telegram Bot Service
+Requires=network-online.target
+After=rc-local.service
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/opt/shepherd-bot/shepherd-launcher.sh
+
+[Install]
+WantedBy=default.target
+
+```
+
+After the service file is created, enable and start the service with `systemctl`. Then you can check the logs with `journalctl` once the service is started.
+
+```
+$ sudo systemctl enable shepherd-bot.service
+$ sudo systemctl start shepherd-bot.service
+$ journalctl -u shepherd-bot.service
+```
 
 ### SSH setup
-For all commands that run over SSH, it will also be necessary to do some more setup on the Raspberry Pi and the target machine.
-In order to be able to login when running Shepherd from `/etc/rc.local`, the root user has to have an auth-key available, that is listed as authorized_key on the SSH server (a.k.a. the machine you want to command). This can be done by adding such a key into the directory `/root/.ssh` on the Raspberry Pi.
+All commands that are run over SSH require that you have an SSH key on your bot host that is an authorized key on the target machine.
+In the example service config above the user is specified as the Raspberry Pi's default user `pi`. This allows us to use this users SSH keys. The user can of course be changed to any other username that your bot host has to offer. The default folder for a users SSH keys is in `$HOME/.ssh`. Make sure one of the public keys from there is added in the authorized keys of your target machine.
 
 ### Shutdown command
 
