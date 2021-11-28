@@ -7,7 +7,7 @@ users.csv
 # Python environment files
 __pycache__
 wolbot_env
-shepherd_env
+shepherd_venv
 
 # Project/Editor files
 ## KDevelop4
