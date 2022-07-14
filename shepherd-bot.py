@@ -48,9 +48,6 @@ Shepherd v{v}
 /wake [name]
     Wake saved machine with name
 
-/wakemac <mac>
-    Wake machine with mac address
-
 /shutdown [name]
     Shutdown saved machine with name
     
@@ -113,23 +110,6 @@ def cmd_wake_keyboard_handler(update: Update, context: CallbackContext) -> None:
     if len(matches) < 1:
         return
     send_magic_packet(update, matches[0].addr, matches[0].name)
-
-
-def cmd_wake_mac(update: Update, context: CallbackContext) -> None:
-    log_call(update)
-    # Check correctness of call
-    cmd_permission = config.PERM_WAKEMAC
-    if not identify(update) or not authorize(update, cmd_permission):
-        return
-
-    args = context.args
-    if len(args) < 1:
-        update.message.reply_text('Please supply a mac address')
-        return
-
-    # Parse arguments and send WoL packets
-    mac_address = args[0]
-    send_magic_packet(update, mac_address, mac_address)
 
 
 def cmd_shutdown(update: Update, context: CallbackContext) -> None:
@@ -423,7 +403,6 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler('ip', cmd_ip))
     dispatcher.add_handler(CommandHandler('wake', cmd_wake, pass_args=True))
     dispatcher.add_handler(CallbackQueryHandler(cmd_wake_keyboard_handler))
-    dispatcher.add_handler(CommandHandler('wakemac', cmd_wake_mac, pass_args=True))
     dispatcher.add_handler(CommandHandler('shutdown', cmd_shutdown, pass_args=True))
     dispatcher.add_handler(CommandHandler('command', cmd_command, pass_args=True))
     dispatcher.add_handler(CommandHandler('ping', cmd_ping, pass_args=True))
