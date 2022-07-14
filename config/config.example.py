@@ -34,5 +34,4 @@ VERIFY_HOST_KEYS: bool = True
 PERM_WAKE: str = 'wake'
 PERM_SHUTDOWN: str = 'shutdown'
 PERM_LIST: str = PERM_WAKE
-PERM_WAKEMAC: str = PERM_WAKE
 PERM_PING: str = PERM_WAKE

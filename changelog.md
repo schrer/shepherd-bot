@@ -1,5 +1,11 @@
 # Changelog
 
+## Shepherd 3.5.0
+
+- Disabling certain commands completely is now possible by making the command permission in config.py an empty string.
+- Remove command `/wakemac`, as use case didn't really seem to be relevant. Also better to not let the bot communicate with any device in the network.
+- Remove unused keyboard handler from code
+
 ## Shepherd 3.4.1
 
 - Fix bug that caused command permissions to be interpreted as the command itself for SSH commands

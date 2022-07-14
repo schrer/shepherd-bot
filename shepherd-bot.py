@@ -48,9 +48,6 @@ Shepherd v{v}
 /wake [name]
     Wake saved machine with name
 
-/wakemac <mac>
-    Wake machine with mac address
-
 /shutdown [name]
     Shutdown saved machine with name
     
@@ -102,34 +99,6 @@ def cmd_wake(update: Update, context: CallbackContext) -> None:
             send_magic_packet(update, m.addr, m.name)
             return
     update.message.reply_text('Could not find ' + machine_name)
-
-
-def cmd_wake_keyboard_handler(update: Update, context: CallbackContext) -> None:
-    try:
-        n = int(update.callback_query.data)
-    except ValueError:
-        pass
-    matches = [m for m in machines if m.id == n]
-    if len(matches) < 1:
-        return
-    send_magic_packet(update, matches[0].addr, matches[0].name)
-
-
-def cmd_wake_mac(update: Update, context: CallbackContext) -> None:
-    log_call(update)
-    # Check correctness of call
-    cmd_permission = config.PERM_WAKEMAC
-    if not identify(update) or not authorize(update, cmd_permission):
-        return
-
-    args = context.args
-    if len(args) < 1:
-        update.message.reply_text('Please supply a mac address')
-        return
-
-    # Parse arguments and send WoL packets
-    mac_address = args[0]
-    send_magic_packet(update, mac_address, mac_address)
 
 
 def cmd_shutdown(update: Update, context: CallbackContext) -> None:
@@ -383,6 +352,14 @@ def identify(update: Update) -> bool:
 
 
 def authorize(update: Update, permission: str) -> bool:
+    if not permission:
+        # Permission name in config is empty, which is interpreted as the command being deactivated
+        name = perm.get_user_name(update.message.from_user.id)
+        logger.warning('User {na} [{id}] tried to use a deactivated feature'
+            .format(na=name, id=update.message.from_user.id))
+        update.message.reply_text('Sorry, but this command is deactivated.')
+        return False
+
     if not perm.has_permission(update.message.from_user.id, permission):
         name = perm.get_user_name(update.message.from_user.id)
         logger.warning('User {na} [{id}] tried to use permission "{pe}" but does not have it'.format(
@@ -414,8 +391,6 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler('list', cmd_list))
     dispatcher.add_handler(CommandHandler('ip', cmd_ip))
     dispatcher.add_handler(CommandHandler('wake', cmd_wake, pass_args=True))
-    dispatcher.add_handler(CallbackQueryHandler(cmd_wake_keyboard_handler))
-    dispatcher.add_handler(CommandHandler('wakemac', cmd_wake_mac, pass_args=True))
     dispatcher.add_handler(CommandHandler('shutdown', cmd_shutdown, pass_args=True))
     dispatcher.add_handler(CommandHandler('command', cmd_command, pass_args=True))
     dispatcher.add_handler(CommandHandler('ping', cmd_ping, pass_args=True))
