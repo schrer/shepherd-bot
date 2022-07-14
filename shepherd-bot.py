@@ -101,17 +101,6 @@ def cmd_wake(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Could not find ' + machine_name)
 
 
-def cmd_wake_keyboard_handler(update: Update, context: CallbackContext) -> None:
-    try:
-        n = int(update.callback_query.data)
-    except ValueError:
-        pass
-    matches = [m for m in machines if m.id == n]
-    if len(matches) < 1:
-        return
-    send_magic_packet(update, matches[0].addr, matches[0].name)
-
-
 def cmd_shutdown(update: Update, context: CallbackContext) -> None:
     log_call(update)
     # Check correctness of call
@@ -402,7 +391,6 @@ def main() -> None:
     dispatcher.add_handler(CommandHandler('list', cmd_list))
     dispatcher.add_handler(CommandHandler('ip', cmd_ip))
     dispatcher.add_handler(CommandHandler('wake', cmd_wake, pass_args=True))
-    dispatcher.add_handler(CallbackQueryHandler(cmd_wake_keyboard_handler))
     dispatcher.add_handler(CommandHandler('shutdown', cmd_shutdown, pass_args=True))
     dispatcher.add_handler(CommandHandler('command', cmd_command, pass_args=True))
     dispatcher.add_handler(CommandHandler('ping', cmd_ping, pass_args=True))
