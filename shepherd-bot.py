@@ -383,6 +383,14 @@ def identify(update: Update) -> bool:
 
 
 def authorize(update: Update, permission: str) -> bool:
+    if not permission:
+        # Permission name in config is empty, which is interpreted as the command being deactivated
+        name = perm.get_user_name(update.message.from_user.id)
+        logger.warning('User {na} [{id}] tried to use a deactivated feature'
+            .format(na=name, id=update.message.from_user.id))
+        update.message.reply_text('Sorry, but this command is deactivated.')
+        return False
+
     if not perm.has_permission(update.message.from_user.id, permission):
         name = perm.get_user_name(update.message.from_user.id)
         logger.warning('User {na} [{id}] tried to use permission "{pe}" but does not have it'.format(
