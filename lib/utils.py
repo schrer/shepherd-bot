@@ -23,18 +23,6 @@ def is_valid_name(name: str) -> bool:
     return not re.search(pattern, name)
 
 
-def normalize_mac_address(address: str) -> str:
-    if len(address) == 12:
-        pass
-        return config.MAC_ADDR_SEPARATOR.join(
-            address[i:i + 2] for i in range(0, 12, 2))
-    elif len(address) == 12 + 5:
-        sep = address[2]
-        return address.replace(sep, config.MAC_ADDR_SEPARATOR)
-    else:
-        raise ValueError('Incorrect MAC address format')
-
-
 def get_highest_id(elements: List[Union[Machine, Command, User]]) -> int:
     highest = -1
     for m in elements:

@@ -64,8 +64,7 @@ Shepherd v{v}
     Get the public IP address of the network Shepherd is in
 
 Names are only required if more than one machine is configured and may only contain a-z, 0-9 and _
-Mac addresses can use the separator '{separator}'
-    """.format(v=version.V, separator=config.MAC_ADDR_SEPARATOR)
+    """.format(v=version.V)
     update.message.reply_text(help_message)
 
 
