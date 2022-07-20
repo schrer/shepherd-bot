@@ -39,8 +39,8 @@ def cmd_help(update: Update, context: CallbackContext) -> None:
     log_call(update)
     if not identify(update):
         return
-    help_message = """
-Shepherd v{v}
+    help_message = f"""
+Shepherd v{version.V}
 
 /help
     Display this help
@@ -64,7 +64,7 @@ Shepherd v{v}
     Get the public IP address of the network Shepherd is in
 
 Names are only required if more than one machine is configured and may only contain a-z, 0-9 and _
-    """.format(v=version.V)
+    """
     update.message.reply_text(help_message)
 
 
@@ -97,7 +97,7 @@ def cmd_wake(update: Update, context: CallbackContext) -> None:
         if m.name == machine_name:
             send_magic_packet(update, m.addr, m.name)
             return
-    update.message.reply_text('Could not find ' + machine_name)
+    update.message.reply_text(f'Could not find {machine_name}')
 
 
 def cmd_shutdown(update: Update, context: CallbackContext) -> None:
@@ -125,15 +125,15 @@ def cmd_shutdown(update: Update, context: CallbackContext) -> None:
     machine = find_by_name(machines, machine_name)
 
     if machine is None:
-        update.message.reply_text('Could not find ' + machine_name)
+        update.message.reply_text(f'Could not find {machine_name}')
         return
 
     if check_ssh_setup(machine):
         logger.info(
-            'host: {host}| user: {user}| port: {port}'.format(host=machine.host, user=machine.user, port=machine.port))
+            f'host: {machine.host}| user: {machine.user}| port: {machine.port}')
         send_shutdown_command(update, machine.host, machine.port, machine.user, machine.name)
     else:
-        logger.info('Machine {name} not set up for SSH connections.'.format(name=machine.name))
+        logger.info(f'Machine {machine.name} not set up for SSH connections.')
         update.message.reply_text(machine.name + ' is not set up for SSH connection')
     return
 
@@ -146,9 +146,9 @@ def cmd_list(update: Update, context: CallbackContext) -> None:
         return
 
     # Print all stored machines
-    msg = '{num} Stored Machines:\n'.format(num=len(machines))
+    msg = f'{len(machines)} Stored Machines:\n'
     for m in machines:
-        msg += '#{i}: "{n}" → {a}\n'.format(i=m.id, n=m.name, a=m.addr)
+        msg += f'#{m.id}: "{m.name}" → {m.addr}\n'
     update.message.reply_text(msg)
 
 
@@ -201,7 +201,7 @@ def cmd_command(update: Update, context: CallbackContext) -> None:
     command = find_by_name(commands, command_name)
 
     if command is None:
-        update.message.reply_text('Could not find command "{cmd}"'.format(cmd=command_name))
+        update.message.reply_text(f'Could not find command "{command_name}"')
         return
 
     cmd_permission = command.permission
@@ -211,22 +211,22 @@ def cmd_command(update: Update, context: CallbackContext) -> None:
     machine = find_by_name(machines, machine_name)
 
     if machine is None:
-        update.message.reply_text('Could not find machine {machine}.'.format(machine=machine_name))
+        update.message.reply_text(f'Could not find machine {machine_name}.')
         return
 
     if not check_ssh_setup(machine):
-        update.message.reply_text('Machine {machine} is not set up for SSH connections.'.format(machine=machine_name))
+        update.message.reply_text(f'Machine {machine_name} is not set up for SSH connections.')
         return
 
     try:
-        logger.info('Attempting to run command on machine {m}: {c}'.format(m=machine.name, c=command.name))
+        logger.info(f'Attempting to run command on machine {machine.name}: {command.name}')
         msg = execute_command(command, machine)
-        update.message.reply_text('Command executed:\n{m}'.format(m=msg))
+        update.message.reply_text(f'Command executed:\n{msg}')
     except SSHException as e:
-        update.message.reply_text('Error in SSH messaging: {e}'.format(e=str(e)))
+        update.message.reply_text(f'Error in SSH messaging: {str(e)}')
         return
     except RuntimeError as e:
-        update.message.reply_text('An unexpected error occurred: {e}'.format(e=str(e)))
+        update.message.reply_text(f'An unexpected error occurred: {str(e)}')
         return
 
 
@@ -260,15 +260,15 @@ def cmd_ping(update: Update, context: CallbackContext) -> None:
             if ping_server(m.host):
                 update.message.reply_text('Pong\nServer is running.')
             else:
-                update.message.reply_text('Could not reach {name} under IP {host}'.format(name=m.name, host=m.host))
+                update.message.reply_text(f'Could not reach {m.name} under IP {m.host}')
             return
     update.message.reply_text('Could not find ' + machine_name)
 
 
 def list_commands(update: Update) -> None:
-    msg = '{num} Stored Commands:\n'.format(num=len(commands))
+    msg = f'{len(commands)} Stored Commands:\n'
     for c in commands:
-        msg += '{name}: {description}\n'.format(name=c.name, description=c.description)
+        msg += f'{c.name}: {c.description}\n'
 
     msg += '\nRun a command with /command [machine_name] <cmd_name>'
 
@@ -280,18 +280,16 @@ def list_commands(update: Update) -> None:
 ##
 
 def error(update: Update, context: CallbackContext) -> None:
-    logger.warning('Update "{u}" caused error "{e}"'.format(u=update, e=context.error))
+    logger.warning(f'Update "{update}" caused error "{context.error}"')
 
 
 def log_call(update: Update) -> None:
     uid = update.message.from_user.id
     cmd = update.message.text.split(' ', 1)
     if len(cmd) > 1:
-        logger.info('User [{u}] invoked command {c} with arguments [{a}]'
-                    .format(c=cmd[0], a=cmd[1], u=uid))
+        logger.info(f'User [{uid}] invoked command {cmd[0]} with arguments [{cmd[1]}]')
     else:
-        logger.info('User [{u}] invoked command {c}'
-                    .format(c=cmd[0], u=uid))
+        logger.info(f'User [{uid}] invoked command {cmd[0]}')
 
 
 def send_magic_packet(update: Update, mac_address: str, display_name: str) -> None:
@@ -300,8 +298,7 @@ def send_magic_packet(update: Update, mac_address: str, display_name: str) -> No
     except ValueError as e:
         update.message.reply_text(str(e))
         return
-    poke = 'Sending magic packets...\n{name}'.format(
-        name=display_name)
+    poke = f'Sending magic packets...\n{display_name}'
 
     if update.callback_query:
         update.callback_query.edit_message_text(poke)
@@ -316,12 +313,12 @@ def send_shutdown_command(update: Update, hostname: str, port: int, user: str, d
         update.message.reply_text(str(e))
         return
     except SSHException as e:
+        msg=str(e)
         update.message.reply_text(
-            'An error occurred while trying to send the shutdown command over SSH.\n{e}\n'.format(e=str(e)))
+            f'An error occurred while trying to send the shutdown command over SSH.\n{msg}\n')
         return
 
-    poke = 'Shutdown command sent to {name}. Output:\n{output}'.format(
-        name=display_name, output=cmd_output)
+    poke = f'Shutdown command sent to {display_name}. Output:\n{cmd_output}'
 
     if update.callback_query:
         update.callback_query.edit_message_text(poke)
@@ -339,13 +336,12 @@ def generate_machine_keyboard(machine_list: List[Machine]) -> List[List[InlineKe
 
 def identify(update: Update) -> bool:
     if not perm.is_known_user(update.message.from_user.id):
-        logger.warning('Unknown User {fn} {ln} [{i}] tried to call bot'.format(
-            fn=update.message.from_user.first_name,
-            ln=update.message.from_user.last_name,
-            i=update.message.from_user.id))
+        logger.warning(
+            f'Unknown User {update.message.from_user.first_name} {update.message.from_user.last_name} '
+            f'[{update.message.from_user.id}] tried to call bot')
         # TODO: reply with GIF of Post Malone waving with finger in police outfit
         update.message.reply_text('You are not authorized to use this bot.\n'
-                                  + 'To set up your own visit https://github.com/schrer/shepherd-bot')
+                                  + 'To set up your own, visit https://github.com/schrer/shepherd-bot')
         return False
     return True
 
@@ -354,17 +350,13 @@ def authorize(update: Update, permission: str) -> bool:
     if not permission:
         # Permission name in config is empty, which is interpreted as the command being deactivated
         name = perm.get_user_name(update.message.from_user.id)
-        logger.warning('User {na} [{id}] tried to use a deactivated feature'
-            .format(na=name, id=update.message.from_user.id))
+        logger.warning(f'User {name} [{update.message.from_user.id}] tried to use a deactivated feature')
         update.message.reply_text('Sorry, but this command is deactivated.')
         return False
 
     if not perm.has_permission(update.message.from_user.id, permission):
         name = perm.get_user_name(update.message.from_user.id)
-        logger.warning('User {na} [{id}] tried to use permission "{pe}" but does not have it'.format(
-            na=name,
-            id=update.message.from_user.id,
-            pe=permission))
+        logger.warning(f'User {name} [{update.message.from_user.id}] tried to use permission "{permission}" but does not have it')
         update.message.reply_text('Sorry, but you are not authorized to run this command.\n'
                                   + 'Ask your bot admin if you think you should get access.')
         return False
@@ -372,7 +364,7 @@ def authorize(update: Update, permission: str) -> bool:
 
 
 def main() -> None:
-    logger.info('Starting Shepherd bot version {v}'.format(v=version.V))
+    logger.info(f'Starting Shepherd bot version {version.V}')
     if not config.VERIFY_HOST_KEYS:
         logger.warning('Verification of host keys for SSH connections is deactivated.')
     global machines

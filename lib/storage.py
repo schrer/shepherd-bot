@@ -35,10 +35,10 @@ def read_users_file(path: str) -> List[User]:
 def __read_storage_file(path: str, line_converter: Callable[[str], Union[User, Machine, Command]],
                         filespec_version: str) -> Union[List[Union[User, Machine, Command]], None]:
     objects = []
-    logger.info('Reading stored entries from "{p}"'.format(p=path))
+    logger.info(f'Reading stored entries from "{path}"')
     # Warning: file contents will not be validated
     if not os.path.isfile(path):
-        logger.error('No file found in {p}'.format(p=path))
+        logger.error(f'No file found in {path}')
         return
     with open(path, 'r') as f:
         for i, line in enumerate(f):
