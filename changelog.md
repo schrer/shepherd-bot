@@ -1,5 +1,9 @@
 # Changelog
 
+## Shepherd 3.x.y
+
+- Code improvements: Update requirements, use f-strings instead of format
+
 ## Shepherd 3.5.0
 
 - Disabling certain commands completely is now possible by making the command permission in config.py an empty string.
